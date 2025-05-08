@@ -1,0 +1,25 @@
+﻿<Window x:Class="ToolApp.ScreenCapture"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ToolApp"
+        mc:Ignorable="d"
+        Title="ScreenCapture" Height="400" Width="350">
+    <Grid>
+        <Button x:Name="BtFullScreen" Content="画面全体" Margin="10,10,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="BtFullScreen_Click" />
+        <Button x:Name="BtActiveWindow" Content="アクティブ窓" Margin="70,10,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="BtActiveWindow_Click" />
+        <Button x:Name="BtRectArea" Content="矩形領域" Margin="140,10,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="BtRectArea_Click" />
+        <Button x:Name="BtFullView" Content="画面切取り" Margin="200,10,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Click="BtFullView_Click" />
+        <Image x:Name="ImCaptureImage" Margin="10,40,10,30">
+            <Image.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Name="ImageCopyMenu" Header="コピー" Click="ImageCopyMenu_Click" />
+                    <MenuItem Name="ImageFileMenu" Header="ファイルに保存" Click="ImageFileMenu_Click" />
+                </ContextMenu>
+            </Image.ContextMenu>
+        </Image>
+        <Button x:Name="BtCopy" Content="コピー" Margin="10,10,0,5" Width="50" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="BtCopy_Click"  />
+        <Button x:Name="BtSave" Content="保存" Margin="70,10,0,5" Width="50" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="BtSave_Click"  />
+    </Grid>
+</Window>
