@@ -13,10 +13,8 @@ namespace ToolApp
     /// </summary>
     public partial class BinView : Window
     {
-        private YLib ylib = new YLib();
-        private List<string> mFileList = new List<string>();
-        private string mFileListName = "BinFieList.csv";
-        private byte[] mBinData;
+        private string mFileListName = "BinFieList.csv";        //  ファイル名リスト保存ファイ露命
+        private byte[] mBinData;                                //  読込データ
         private string[] mDataType = {                          //  データの種別
             "byte", "ascii", "int8", "int16", "int32", "int64", "float", "double", "日時", "時間", "時間2", "度1", "度2", "度3" };
         private int[] mDataStep = {                             //  データサイズ
@@ -26,12 +24,14 @@ namespace ToolApp
         private int[] mCharCount = {                            //  表示文字数
              2,      1,       3,      5,       10,      20,      14,      22,       19,     12,     9,      22,    22,    12 };
 
+        private YLib ylib = new YLib();
+
         public BinView()
         {
             InitializeComponent();
 
             tbBinView.FontFamily = new System.Windows.Media.FontFamily("MS Gothic");
-            tbBinView.FontSize = 10;
+            tbBinView.FontSize = 11;
             tbStart.Text = "0";
             tbColCount.Text = "16";
             cbEndian.IsChecked = true;

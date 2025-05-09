@@ -1,51 +1,23 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WpfLib;
 
 namespace ToolApp
 {
-    public class DiffFile
-    {
-        public string mFileName { get; set; }
-        public string mRelPath { get; set; }
-        public DateTime mSrcLastDate { get; set; }
-        public long mSrcSize { get; set; }
-        public DateTime mDstLastDate { get; set; }
-        public long mDstSize { get; set; }
 
-        public DiffFile(string mFileName, string mRelPath, DateTime mSrcLastDate, int mSrcSize, DateTime mDstLastDate, int mDstSize)
-        {
-            this.mFileName = mFileName;
-            this.mRelPath = mRelPath;
-            this.mSrcLastDate = mSrcLastDate;
-            this.mSrcSize = mSrcSize;
-            this.mDstLastDate = mDstLastDate;
-            this.mDstSize = mDstSize;
-        }
-
-        public DiffFile(FilesData fileData)
-        {
-            mFileName = Path.GetFileName(fileData.mRelPath);
-            mRelPath = Path.GetDirectoryName(fileData.mRelPath);
-            mSrcLastDate = fileData.mSrcFile == null ? new DateTime() : fileData.mSrcFile.LastWriteTime;
-            mSrcSize = fileData.mSrcFile == null ? 0 : fileData.mSrcFile.Length;
-            mDstLastDate = fileData.mDstFile == null ? new DateTime() : fileData.mDstFile.LastWriteTime;
-            mDstSize = fileData.mDstFile == null ? 0 : fileData.mDstFile.Length;
-        }
-    }
 
     /// <summary>
     /// DiffFolder.xaml の相互作用ロジック
     /// </summary>
     public partial class DiffFolder : Window
     {
-        private string mSrcFolder = @"D:\DATA\Document\KNote";
-        private string mDstFolder = @"C:\Users\k-yos\OneDrive\ドキュメント\Document\KNote";
+        private double mWindowWidth;                            //  ウィンドウの高さ
+        private double mWindowHeight;                           //  ウィンドウ幅
 
         private DirectoryDiff mDiffFolder;
         private List<DiffFile> mDiffFileList;
@@ -56,6 +28,7 @@ namespace ToolApp
             "Title", "SrcFolder", "DestFolder", "TargetFile", "ExceptFile", "ExceptFolder",
         };
         private string mTitleListPath = "FolderTitleList.csv";
+        private int mMaxTitleListCount = 20;                              //  最大保存タイトル数
 
         private YLib ylib = new YLib();
 
@@ -64,12 +37,13 @@ namespace ToolApp
         {
             InitializeComponent();
 
+            cbHachChk.IsChecked = true;
+            rbDiffFile.IsChecked = true;
             loadTitleList(mTitleListPath);
             if (mFolderTitleList != null) {
                 cbFolderTitle.ItemsSource = mFolderTitleList.ConvertAll(x => x[0]);
-                //cbSrcFolder.ItemsSource = mFolderTitleList.ConvertAll(x => x[1]);
-                //cbDstFolder.ItemsSource = mFolderTitleList.ConvertAll(x => x[2]);
             }
+            WindowFormLoad();
         }
 
 
@@ -81,16 +55,63 @@ namespace ToolApp
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             saveTitleList(mTitleListPath);
+            WindowFormSave();
         }
 
-        private void cbFolderTitle_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        /// <summary>
+        /// Windowの状態を前回の状態にする
+        /// </summary>
+        private void WindowFormLoad()
         {
-            if (0 <= cbFolderTitle.SelectedIndex) {
-                //cbSrcFolder.SelectedIndex = cbFolderTitle.SelectedIndex;
-                //cbDstFolder.SelectedIndex = cbFolderTitle.SelectedIndex;
+            //  前回のWindowの位置とサイズを復元する(登録項目をPropeties.settingsに登録して使用する)
+            Properties.Settings.Default.Reload();
+            if (Properties.Settings.Default.DiffFolderWindowWidth < 100 ||
+                Properties.Settings.Default.DiffFolderWindowHeight < 100 ||
+                SystemParameters.WorkArea.Height < Properties.Settings.Default.DiffFolderWindowHeight) {
+                Properties.Settings.Default.DiffFolderWindowWidth = mWindowWidth;
+                Properties.Settings.Default.DiffFolderWindowHeight = mWindowHeight;
+            } else {
+                Top = Properties.Settings.Default.DiffFolderWindowTop;
+                Left = Properties.Settings.Default.DiffFolderWindowLeft;
+                Width = Properties.Settings.Default.DiffFolderWindowWidth;
+                Height = Properties.Settings.Default.DiffFolderWindowHeight;
             }
         }
 
+        /// <summary>
+        /// Window状態を保存する
+        /// </summary>
+        private void WindowFormSave()
+        {
+            //  Windowの位置とサイズを保存(登録項目をPropeties.settingsに登録して使用する)
+            Properties.Settings.Default.DiffFolderWindowTop = Top;
+            Properties.Settings.Default.DiffFolderWindowLeft = Left;
+            Properties.Settings.Default.DiffFolderWindowWidth = Width;
+            Properties.Settings.Default.DiffFolderWindowHeight = Height;
+            Properties.Settings.Default.Save();
+        }
+
+        /// <summary>
+        /// 比較タイトル選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cbFolderTitle_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (0 <= cbFolderTitle.SelectedIndex) {
+                tbSrcFolder.Text = mFolderTitleList[cbFolderTitle.SelectedIndex][1];
+                tbDstFolder.Text = mFolderTitleList[cbFolderTitle.SelectedIndex][2];
+                tbTargetFile.Text = mFolderTitleList[cbFolderTitle.SelectedIndex][3];
+                tbExceptFile.Text = mFolderTitleList[cbFolderTitle.SelectedIndex][4];
+                tbExceptFolder.Text = mFolderTitleList[cbFolderTitle.SelectedIndex][5];
+            }
+        }
+
+        /// <summary>
+        /// [マウスダブルクリック]比較元フォルダ選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void tbSrcFolder_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             string srcFlder = ylib.folderSelect(tbSrcFolder.Text);
@@ -99,6 +120,11 @@ namespace ToolApp
             }
         }
 
+        /// <summary>
+        /// [マウスダブルクリック]比較先フォルダ選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void tbDstFolder_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             string dstFlder = ylib.folderSelect(tbDstFolder.Text);
@@ -107,89 +133,152 @@ namespace ToolApp
             }
         }
 
+        /// <summary>
+        /// [比較]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Button bt = (Button)e.Source;
             if (bt.Name.CompareTo("btComper") == 0) {
+                //  フォルダ比較
                 if (Directory.Exists(tbSrcFolder.Text) || Directory.Exists(tbDstFolder.Text)) {
-                    setDiffFolder(tbSrcFolder.Text, tbDstFolder.Text);
                     setFoldeTitleList();
+                    string[] buf = mFolderTitleList[0];
+                    Mouse.OverrideCursor = Cursors.Wait;
+                    setDiffFolder(buf[1], buf[2], cbHachChk.IsChecked == true,
+                        buf[3], buf[4], buf[5]);
+                    Mouse.OverrideCursor = Cursors.Arrow;
                 } else {
                     MessageBox.Show("フォルダが存在しません");
                 }
             } else if (bt.Name.CompareTo("btRightUpdate") == 0) {
-                selectCopy();
+                //  右側へコピー
+                selectCopy(tbSrcFolder.Text, tbDstFolder.Text);
             } else if (bt.Name.CompareTo("btLeftUpdate") == 0) {
+                //  左側にコピー
+                selectCopy(tbDstFolder.Text, tbSrcFolder.Text);
             }
         }
 
-        private void selectCopy()
+        /// <summary>
+        /// 選択したファイルのみを更新(コピー)
+        /// </summary>
+        /// <param name="srcFolder"></param>
+        /// <param name="destFolder"></param>
+        private void selectCopy(string srcFolder, string destFolder)
         {
-            IList selitems = dgDiffFolder.SelectedItems;
-            if (0 < selitems.Count) {
-                foreach (DiffFile filesData in selitems) {
-                    System.Diagnostics.Debug.WriteLine($"{filesData.mRelPath}\\{filesData.mFileName}");
-
+            IList selItems = dgDiffFolder.SelectedItems;
+            int copyType = cbOverWriteForce.IsChecked == true ? 2 : 0;
+            if (0 < selItems.Count) {
+                pbCopyCount.Minimum = 0;
+                pbCopyCount.Maximum = selItems.Count;
+                pbCopyCount.Value = 0;
+                if (ylib.messageBox(this.Owner, $"{srcFolder} から\n{destFolder} に\n{selItems.Count} ファイル コピーします",
+                    "", "確認", MessageBoxButton.OKCancel) == MessageBoxResult.OK) {
+                    foreach (DiffFile fileData in selItems) {
+                        string srcPath = fileData.getPath(srcFolder);
+                        string destPath = fileData.getPath(destFolder);
+                        System.Diagnostics.Debug.WriteLine($"{srcPath} {destPath}");
+                        ylib.fileCopy(srcPath, destPath, copyType); pbCopyCount.Value++;
+                    }
                 }
             }
         }
 
-        private void setDiffFolder(string srcFolder, string dstFolder)
+        /// <summary>
+        /// フォルダ比較表示
+        /// </summary>
+        /// <param name="srcFolder">比較元</param>
+        /// <param name="dstFolder">比較先</param>
+        /// <param name="hash">ハッシュで比較</param>
+        /// <param name="targetFile">比較ファイル</param>
+        /// <param name="exceptFile">除外ファイル</param>
+        /// <param name="exceptFolder">除外フォルダ</param>
+        private void setDiffFolder(string srcFolder, string dstFolder, bool hash, string targetFile, string exceptFile, string exceptFolder)
         {
-            mSrcFolder = srcFolder;
-            mDstFolder = dstFolder;
-            mDiffFolder = new DirectoryDiff(srcFolder, dstFolder);
-            mDiffFolder.stripSameFile();
+            mDiffFolder = new DirectoryDiff(srcFolder, dstFolder, hash, targetFile, exceptFile, exceptFolder);
+            dispDiffFolder();
+        }
+
+        /// <summary>
+        /// 比較リスト表示
+        /// </summary>
+        private void dispDiffFolder()
+        {
+            List<FilesData> files = mDiffFolder.stripSameFile(rbDiffFile.IsChecked == true);        //  再ファイルのみ表示
             if (mDiffFileList == null)
                 mDiffFileList = new List<DiffFile>();
             mDiffFileList.Clear();
-            foreach (FilesData filesData in mDiffFolder.mFiles) {
+            foreach (FilesData filesData in files) {
                 mDiffFileList.Add(new DiffFile(filesData));
             }
             dgDiffFolder.ItemsSource = new ReadOnlyCollection<DiffFile>(mDiffFileList);
         }
 
+        /// <summary>
+        /// 保存された設定値を設定する
+        /// </summary>
         private void setFoldeTitleList()
         {
+            string[] buf = new string[6];
+            buf[0] = cbFolderTitle.Text;
+            buf[1] = tbSrcFolder.Text;
+            buf[2] = tbDstFolder.Text;
+            buf[3] = tbTargetFile.Text;
+            buf[4] = tbExceptFile.Text;
+            buf[5] = tbExceptFolder.Text;
             if (mFolderTitleList != null) {
                 int index = mFolderTitleList.FindIndex(x => x[0] == cbFolderTitle.Text);
-                if (0 <= index) {
-                    mFolderTitleList[index][1] = tbSrcFolder.Text;
-                    mFolderTitleList[index][2] = tbDstFolder.Text;
-                    mFolderTitleList[index][3] = tbTargetFile.Text;
-                    mFolderTitleList[index][4] = tbExceptFile.Text;
-                    mFolderTitleList[index][5] = tbExceptFolder.Text;
-                } else {
-                    string[] buf = new string[6];
-                    buf[0] = cbFolderTitle.Text;
-                    buf[1] = tbSrcFolder.Text;
-                    buf[2] = tbDstFolder.Text;
-                    buf[3] = tbTargetFile.Text;
-                    buf[4] = tbExceptFile.Text;
-                    buf[5] = tbExceptFolder.Text;
-                    mFolderTitleList.Add(buf);
-                }
+                if (0 <= index)
+                    mFolderTitleList.RemoveAt(index);
+                mFolderTitleList.Insert(0, buf);
             } else {
-                mFolderTitleList = new List<string[]>();
-                string[] buf = new string[6];
-                buf[0] = cbFolderTitle.Text;
-                buf[1] = tbSrcFolder.Text;
-                buf[2] = tbDstFolder.Text;
-                buf[3] = tbTargetFile.Text;
-                buf[4] = tbExceptFile.Text;
-                buf[5] = tbExceptFolder.Text;
-                mFolderTitleList.Add(buf);
+                mFolderTitleList = new List<string[]> { buf };
             }
+            if (mFolderTitleList != null)
+                cbFolderTitle.ItemsSource = mFolderTitleList.ConvertAll(x => x[0]);
         }
 
+        /// <summary>
+        /// ファイルリストを保存する
+        /// </summary>
+        /// <param name="path">パス</param>
         private void saveTitleList(string path)
         {
             ylib.saveCsvData(path, mTitleListFormat.ToArray(), mFolderTitleList);
         }
 
+        /// <summary>
+        /// ファイルリストを読み込む
+        /// </summary>
+        /// <param name="path">パス</param>
         private void loadTitleList(string path)
         {
             mFolderTitleList = ylib.loadCsvData(path, mTitleListFormat.ToArray());
+            if (mMaxTitleListCount < mFolderTitleList.Count)
+                mFolderTitleList.RemoveRange(mMaxTitleListCount, mFolderTitleList.Count - mMaxTitleListCount);
+        }
+
+        /// <summary>
+        /// [終了ボタン]
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        /// <summary>
+        /// [差異/全ファイル]切り替え
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void rbDiffFile_Click(object sender, RoutedEventArgs e)
+        {
+            dispDiffFolder();
         }
     }
 }

@@ -11,20 +11,27 @@
         <ComboBox Name="cbFolderTitle" Margin="70,5,40,0" IsEditable="True" VerticalAlignment="Top" SelectionChanged="cbFolderTitle_SelectionChanged"/>
         <Label Content="比較元" Margin="10,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
         <TextBox Name="tbSrcFolder" Margin="70,30,40,0" VerticalAlignment="Top" MouseDoubleClick="tbSrcFolder_MouseDoubleClick"/>
-        <Label Content="比較先" Margin="10,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <TextBox Name="tbDstFolder" Margin="70,55,40,0" VerticalAlignment="Top" MouseDoubleClick="tbDstFolder_MouseDoubleClick"/>
-        <Label Content="対象ファイル" Margin="5,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbTargetFile" Margin="70,85,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <Label Content="除外ファイル" Margin="200,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbExceptFile" Margin="270,85,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <Label Content="除外フォルダ" Margin="400,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbExceptFolder" Margin="470,85,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <DataGrid x:Name="dgDiffFolder" Margin="0,110,0,30" IsReadOnly="False" AutoGenerateColumns="False">
+        <Label Content="比較先" Margin="10,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <TextBox Name="tbDstFolder" Margin="70,52,40,0" VerticalAlignment="Top" MouseDoubleClick="tbDstFolder_MouseDoubleClick"/>
+        <Label Content="対象ファイル" Margin="5,70,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbTargetFile" Margin="70,75,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <Label Content="除外ファイル" Margin="200,70,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbExceptFile" Margin="270,75,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <Label Content="除外フォルダ" Margin="400,70,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbExceptFolder" Margin="470,75,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <DataGrid x:Name="dgDiffFolder" Margin="0,100,0,30" IsReadOnly="False" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ファイル名" Binding="{Binding mFileName}" IsReadOnly="True" />
                 <DataGridTextColumn Header="相対パス" Binding="{Binding mRelPath}" IsReadOnly="True" />
                 <DataGridTextColumn Header="比較元日付" Binding="{Binding mSrcLastDate, StringFormat=yyyy/MM/dd HH:mm:ss}" IsReadOnly="True" />
                 <DataGridTextColumn Header="比較元サイズ" Binding="{Binding mSrcSize, StringFormat=N0}" IsReadOnly="True" >
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn x:Name="dgColSrcCrc" Header="比較元CRC" Binding="{Binding mSrcCrc, StringFormat=X0}" IsReadOnly="True" >
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="{x:Type TextBlock}">
                             <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -39,10 +46,23 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
+                <DataGridTextColumn x:Name="dgColDstCrc" Header="比較先CRC" Binding="{Binding mDstCrc, StringFormat=X0}" IsReadOnly="True" >
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <Button x:Name="btComper" Content="比較"  Width="50" Margin="10,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
-        <Button x:Name="btRightUpdate" Content="右へ更新" Width="50" Margin="70,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
-        <Button x:Name="btLeftUpdate" Content="左へ更新" Width="50" Margin="130,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
+        <Button x:Name="btComper" Content="比較"  Width="50" Margin="5,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
+        <Button x:Name="btRightUpdate" Content="右へコピー" Width="50" Margin="60,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
+        <Button x:Name="btLeftUpdate" Content="左へコピー" Width="50" Margin="115,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
+        <CheckBox x:Name="cbOverWriteForce" Content="強制上書" Margin="170,0,0,7" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+        <ProgressBar x:Name="pbCopyCount" Width="50" Height="10" Margin="245,0,0,10" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+        <RadioButton x:Name="rbDiffFile" Content="差異ファイル" Margin="305,0,0,7" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="rbDiffFile_Click" />
+        <RadioButton x:Name="rbAllFile" Content="全ファイル" Margin="385,0,0,7" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="rbDiffFile_Click" />
+        <CheckBox x:Name="cbHachChk" Content="ハッシュ" Margin="460,0,0,7" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+        <Button x:Name="btClose" Content="終了" Width="50" Click="btClose_Click" Margin="0,0,5,5" VerticalAlignment="Bottom" HorizontalAlignment="Right"  />
     </Grid>
 </Window>

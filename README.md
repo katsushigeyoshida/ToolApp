@@ -83,7 +83,7 @@ FITファイルのGPS情報を取得する
 　　　　buf = ((double)BitConverter.ToUInt32(byteData, 0) / 3600).ToString().PadLeft(charCount);  
 　度2 :  座標データ(緯度・経度(semicircle→度))(FIT形式)  
 　　　　buf = ((double)BitConverter.ToUInt32(byteData, 0) / Math.Pow(2, 31) * 180).ToString().PadLeft(charCount);  
-
+※ 検索機能はないので検索が必要な時はエディタに表示内容をコピーしておこなう必要がある  
 
 ### ■開発環境  
 開発ソフト : Microsoft Visual Studio 2022  

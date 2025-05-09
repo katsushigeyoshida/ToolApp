@@ -1,2 +1,3 @@
-﻿"Title","SrcFolder","DestFolder"
-"YamaRecoList","D:\WSRC\VS2017\WPF\TestApp\YamaRecoList","D:\WSRC\VS2017\WPF\ToolApp\YamaRecoList"
+﻿"Title","SrcFolder","DestFolder","TargetFile","ExceptFile","ExceptFolder"
+"YamaRecoList","G:\マイドライブ\Program\VS2017\WPF\ToolApp\YamaRecoList","D:\WSRC\VS2017\WPF\ToolApp\YamaRecoList","*.cs","",""
+"ToolApp","G:\マイドライブ\Program\VS2017\WPF\ToolApp","D:\WSRC\VS2017\WPF\ToolApp","","*.xaml *.png","bin obj .git Properties"
