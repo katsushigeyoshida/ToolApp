@@ -257,7 +257,7 @@ namespace ToolApp
         private void loadTitleList(string path)
         {
             mFolderTitleList = ylib.loadCsvData(path, mTitleListFormat.ToArray());
-            if (mMaxTitleListCount < mFolderTitleList.Count)
+            if (mFolderTitleList != null && mMaxTitleListCount < mFolderTitleList.Count)
                 mFolderTitleList.RemoveRange(mMaxTitleListCount, mFolderTitleList.Count - mMaxTitleListCount);
         }
 
