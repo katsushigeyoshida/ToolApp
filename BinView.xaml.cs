@@ -43,7 +43,7 @@ namespace ToolApp
 
             WindowFormLoad();
 
-            tbBinView.FontFamily = new System.Windows.Media.FontFamily("MS Gothic");
+            tbBinView.FontFamily = new FontFamily("MS Gothic");
             tbStart.Text = "0";
             tbColCount.Text = "16";
             cbEndian.IsChecked = true;
@@ -126,7 +126,7 @@ namespace ToolApp
                 if (0 < fileList.Count) {
                     cbFileSelect.Items.Clear();
                     foreach (string file in fileList)
-                        if (File.Exists(file))
+                        if (File.Exists(file) && !cbFileSelect.Items.Contains(file))
                             cbFileSelect.Items.Add(file);
                 }
             }
@@ -220,11 +220,19 @@ namespace ToolApp
         /// <param name="e"></param>
         private void cbFileSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            string path = cbFileSelect.Items[cbFileSelect.SelectedIndex].ToString();
-            setMemoText();
-            if (mMemoDlg != null)
-                mMemoDlg.Close();
-            loadData(path);
+            int index = cbFileSelect.SelectedIndex;
+            if (index < 0) return;
+            string path = cbFileSelect.Items[index].ToString();
+            if (0 < index) {
+                if (cbFileSelect.Items.Contains(path))
+                    cbFileSelect.Items.Remove(path);
+                cbFileSelect.Items.Insert(0, path);
+                cbFileSelect.SelectedIndex = 0;
+            } else {
+                if (mMemoDlg != null)
+                    mMemoDlg.Close();
+                loadData(path);
+            }
         }
 
         /// <summary>
@@ -264,10 +272,14 @@ namespace ToolApp
         /// <param name="path"></param>
         private void loadData(string path)
         {
-            if (0 < path.Length) {
+            if (0 < path.Length && File.Exists(path)) {
                 mBinData = ylib.loadBinData(path);
-                tbFileProp.Text = "size = " + mBinData.Length.ToString();
-                tbBinView.Text = dumpData(mBinData);
+                if (mBinData != null) {
+                    tbFileProp.Text = "size = " + mBinData.Length.ToString();
+                    tbBinView.Text = dumpData(mBinData);
+                } else {
+                    tbBinView.Text = "";
+                }
             }
         }
 
@@ -326,6 +338,7 @@ namespace ToolApp
 
         /// <summary>
         /// 指定位置のデータを文字列に変換
+        /// BitConverterはリトルエンディアンで動作
         /// </summary>
         /// <param name="data">byteデータ</param>
         /// <param name="pos">位置</param>
@@ -392,7 +405,7 @@ namespace ToolApp
         {
             byte[] ret = new byte[size];
             Array.Copy(data, pos, ret, 0, size);
-            if (littleEndien)
+            if (!littleEndien)
                 Array.Reverse(ret);
             return ret;
         }
@@ -503,6 +516,7 @@ namespace ToolApp
         private string getCursorAddress(int cursorPosition)
         {
             int lineIndex = tbBinView.Text.LastIndexOf('\n', cursorPosition);
+            if (lineIndex < 0) return "";
             int n = tbBinView.Text.IndexOf(':',lineIndex);
             int size = n - lineIndex - 1;
             string address = "";
@@ -529,6 +543,8 @@ namespace ToolApp
                 mMemoDlg.Close();
             mMemoDlg = new InputBox();
             //mMemoDlg.Topmost = true;
+            mMemoDlg.mFontFamily = "MS Gothic";
+            mMemoDlg.mFilePath = path;
             mMemoDlg.mMultiLine = true;
             mMemoDlg.Title = $"めも [{Path.GetFileName(path)}]";
             mMemoDlg.mCalcMenu = true;
@@ -551,7 +567,7 @@ namespace ToolApp
             if (mMemoDlg != null && mMemoDlg.IsVisible) {
                 mMemoDlg.updateData();
                 if (mMemoDlg.mEditText.Length == 0) return;
-                string path = getMemoFileName(cbFileSelect.Text);
+                string path = mMemoDlg.mFilePath;
                 if (File.Exists(path)) {
                     ylib.saveTextFile(path, mMemoDlg.mEditText);
                 } else {
@@ -568,7 +584,7 @@ namespace ToolApp
         /// <returns></returns>
         private string getMemoFileName(string filePath)
         {
-            if (cbFileSelect.Text == "") return "";
+            if (filePath == "") return "";
             string path = Path.GetFileNameWithoutExtension(filePath) + ".memo";
             return Path.Combine(Path.GetDirectoryName(filePath), path);
         }
