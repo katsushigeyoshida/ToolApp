@@ -21,14 +21,14 @@ namespace ToolApp
 
         private DirectoryDiff mDiffFolder;
         private List<DiffFile> mDiffFileList;
-        private List<string[]> mFolderTitleList = new List<string[]>() {
-            new string[] {"KNote",  @"D:\DATA\Document\KNote", @"C:\Users\k-yos\OneDrive\ドキュメント\Document\KNote" },
-        };
+        private List<string[]> mFolderTitleList = new List<string[]>();
         private List<string> mTitleListFormat = new List<string>() {
             "Title", "SrcFolder", "DestFolder", "TargetFile", "ExceptFile", "ExceptFolder",
         };
+        private string[] mCurFolderTitleList;
         private string mTitleListPath = "FolderTitleList.csv";
         private int mMaxTitleListCount = 20;                              //  最大保存タイトル数
+        private string mDiffTool = "";
 
         private YLib ylib = new YLib();
 
@@ -76,6 +76,7 @@ namespace ToolApp
                 Width = Properties.Settings.Default.DiffFolderWindowWidth;
                 Height = Properties.Settings.Default.DiffFolderWindowHeight;
             }
+            mDiffTool = Properties.Settings.Default.DiffTool;
         }
 
         /// <summary>
@@ -83,6 +84,7 @@ namespace ToolApp
         /// </summary>
         private void WindowFormSave()
         {
+            Properties.Settings.Default.DiffTool = mDiffTool;
             //  Windowの位置とサイズを保存(登録項目をPropeties.settingsに登録して使用する)
             Properties.Settings.Default.DiffFolderWindowTop = Top;
             Properties.Settings.Default.DiffFolderWindowLeft = Left;
@@ -108,7 +110,7 @@ namespace ToolApp
         }
 
         /// <summary>
-        /// [マウスダブルクリック]比較元フォルダ選択
+        /// [比較元フォルダマウスダブルクリック]フォルダ選択
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -121,7 +123,7 @@ namespace ToolApp
         }
 
         /// <summary>
-        /// [マウスダブルクリック]比較先フォルダ選択
+        /// [比較先フォルダマウスダブルクリック]フォルダ選択
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -130,6 +132,45 @@ namespace ToolApp
             string dstFlder = ylib.folderSelect(tbDstFolder.Text);
             if (dstFlder != null && 0 < dstFlder.Length) {
                 tbDstFolder.Text = dstFlder;
+            }
+        }
+
+        /// <summary>
+        /// [リストダブルクリック]ファイル比較
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgDiffFolder_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            int index = dgDiffFolder.SelectedIndex;
+            if (0 <= index && 0 < mDiffTool.Length) {
+                DiffFile fileData = (DiffFile)dgDiffFolder.Items[index];
+                string srcPath = fileData.getPath(mCurFolderTitleList[1]);
+                string destPath = fileData.getPath(mCurFolderTitleList[2]);
+                ylib.processStart(mDiffTool, $"\"{srcPath}\" \"{destPath}\"");
+            }
+        }
+
+        /// <summary>
+        /// [差異/全ファイル切り替え]ラジオボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void rbDiffFile_Click(object sender, RoutedEventArgs e)
+        {
+            dispDiffFolder();
+        }
+
+        /// <summary>
+        /// コンテキストメニュー選択
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgContextMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)e.Source;
+            if (menuItem.Name.CompareTo("dgFileSelectMenu") == 0) {
+                setDiffTool();
             }
         }
 
@@ -145,28 +186,38 @@ namespace ToolApp
                 //  フォルダ比較
                 if (Directory.Exists(tbSrcFolder.Text) || Directory.Exists(tbDstFolder.Text)) {
                     setFoldeTitleList();
-                    string[] buf = mFolderTitleList[0];
+                    mCurFolderTitleList = mFolderTitleList[0];
                     Mouse.OverrideCursor = Cursors.Wait;
-                    setDiffFolder(buf[1], buf[2], cbHachChk.IsChecked == true,
-                        buf[3], buf[4], buf[5]);
+                    setDiffFolder(mCurFolderTitleList[1], mCurFolderTitleList[2], cbHachChk.IsChecked == true,
+                        mCurFolderTitleList[3], mCurFolderTitleList[4], mCurFolderTitleList[5]);
                     Mouse.OverrideCursor = Cursors.Arrow;
                 } else {
                     MessageBox.Show("フォルダが存在しません");
                 }
             } else if (bt.Name.CompareTo("btRightUpdate") == 0) {
                 //  右側へコピー
-                selectCopy(tbSrcFolder.Text, tbDstFolder.Text);
+                selectCopy(mCurFolderTitleList[1], mCurFolderTitleList[2]);
             } else if (bt.Name.CompareTo("btLeftUpdate") == 0) {
                 //  左側にコピー
-                selectCopy(tbDstFolder.Text, tbSrcFolder.Text);
+                selectCopy(mCurFolderTitleList[2], mCurFolderTitleList[1]);
             }
+        }
+
+        /// <summary>
+        /// [終了ボタン]
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         /// <summary>
         /// 選択したファイルのみを更新(コピー)
         /// </summary>
-        /// <param name="srcFolder"></param>
-        /// <param name="destFolder"></param>
+        /// <param name="srcFolder">コピー元</param>
+        /// <param name="destFolder">コピー先</param>
         private void selectCopy(string srcFolder, string destFolder)
         {
             IList selItems = dgDiffFolder.SelectedItems;
@@ -242,6 +293,22 @@ namespace ToolApp
         }
 
         /// <summary>
+        /// ファイル比較ツールの設定
+        /// </summary>
+        private void setDiffTool()
+        {
+            InputBox dlg = new InputBox();
+            dlg.mFileSelectMenu = true;
+            dlg.mMainWindow = this;
+            dlg.Title = "ファイル比較ツール";
+            dlg.mEditText = mDiffTool;
+            var result = dlg.ShowDialog();
+            if (result == true) {
+                mDiffTool = dlg.mEditText;
+            }
+        }
+
+        /// <summary>
         /// ファイルリストを保存する
         /// </summary>
         /// <param name="path">パス</param>
@@ -259,26 +326,6 @@ namespace ToolApp
             mFolderTitleList = ylib.loadCsvData(path, mTitleListFormat.ToArray());
             if (mFolderTitleList != null && mMaxTitleListCount < mFolderTitleList.Count)
                 mFolderTitleList.RemoveRange(mMaxTitleListCount, mFolderTitleList.Count - mMaxTitleListCount);
-        }
-
-        /// <summary>
-        /// [終了ボタン]
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void btClose_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
-        /// <summary>
-        /// [差異/全ファイル]切り替え
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void rbDiffFile_Click(object sender, RoutedEventArgs e)
-        {
-            dispDiffFolder();
         }
     }
 }

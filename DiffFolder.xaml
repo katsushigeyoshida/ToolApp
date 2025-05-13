@@ -19,7 +19,7 @@
         <TextBox x:Name="tbExceptFile" Margin="270,75,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
         <Label Content="除外フォルダ" Margin="400,70,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
         <TextBox x:Name="tbExceptFolder" Margin="470,75,0,0" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <DataGrid x:Name="dgDiffFolder" Margin="0,100,0,30" IsReadOnly="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="dgDiffFolder" Margin="0,100,0,30" IsReadOnly="False" AutoGenerateColumns="False" MouseDoubleClick="dgDiffFolder_MouseDoubleClick">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ファイル名" Binding="{Binding mFileName}" IsReadOnly="True" />
                 <DataGridTextColumn Header="相対パス" Binding="{Binding mRelPath}" IsReadOnly="True" />
@@ -54,6 +54,11 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
             </DataGrid.Columns>
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Name="dgFileSelectMenu" Header="比較ツール選択" Click="dgContextMenu_Click" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
         </DataGrid>
         <Button x:Name="btComper" Content="比較"  Width="50" Margin="5,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>
         <Button x:Name="btRightUpdate" Content="右へコピー" Width="50" Margin="60,0,0,5" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Button_Click"/>

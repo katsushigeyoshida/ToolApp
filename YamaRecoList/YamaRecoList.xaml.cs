@@ -137,17 +137,17 @@ namespace ToolApp
         {
             //  前回のWindowの位置とサイズを復元する(登録項目をPropeties.settingsに登録して使用する)
             Properties.Settings.Default.Reload();
-            //if (Properties.Settings.Default.YamaRecoListWidth < 100 ||
-            //       Properties.Settings.Default.YamaRecoListHeight < 100 ||
-            //    SystemParameters.WorkArea.Height < Properties.Settings.Default.YamaRecoListHeight) {
-            //    Properties.Settings.Default.YamaRecoListWidth = mWindowWidth;
-            //    Properties.Settings.Default.YamaRecoListHeight = mWindowHeight;
-            //} else {
-            //    this.Top = Properties.Settings.Default.YamaRecoListTop;
-            //    this.Left = Properties.Settings.Default.YamaRecoListLeft;
-            //    this.Width = Properties.Settings.Default.YamaRecoListWidth;
-            //    this.Height = Properties.Settings.Default.YamaRecoListHeight;
-            //}
+            if (Properties.Settings.Default.YamaRecoListWidth < 100 ||
+                   Properties.Settings.Default.YamaRecoListHeight < 100 ||
+                SystemParameters.WorkArea.Height < Properties.Settings.Default.YamaRecoListHeight) {
+                Properties.Settings.Default.YamaRecoListWidth = mWindowWidth;
+                Properties.Settings.Default.YamaRecoListHeight = mWindowHeight;
+            } else {
+                Top = Properties.Settings.Default.YamaRecoListTop;
+                Left = Properties.Settings.Default.YamaRecoListLeft;
+                Width = Properties.Settings.Default.YamaRecoListWidth;
+                Height = Properties.Settings.Default.YamaRecoListHeight;
+            }
         }
 
         /// <summary>
@@ -156,10 +156,10 @@ namespace ToolApp
         private void WindowFormSave()
         {
             //  Windowの位置とサイズを保存(登録項目をPropeties.settingsに登録して使用する)
-            //Properties.Settings.Default.YamaRecoListTop = this.Top;
-            //Properties.Settings.Default.YamaRecoListLeft = this.Left;
-            //Properties.Settings.Default.YamaRecoListWidth = this.Width;
-            //Properties.Settings.Default.YamaRecoListHeight = this.Height;
+            Properties.Settings.Default.YamaRecoListTop = Top;
+            Properties.Settings.Default.YamaRecoListLeft = Left;
+            Properties.Settings.Default.YamaRecoListWidth = Width;
+            Properties.Settings.Default.YamaRecoListHeight = Height;
             Properties.Settings.Default.Save();
         }
 

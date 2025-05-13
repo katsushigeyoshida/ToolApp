@@ -238,5 +238,125 @@ namespace ToolApp.Properties {
                 this["DiffFolderWindowLeft"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double YamaRecoListTop {
+            get {
+                return ((double)(this["YamaRecoListTop"]));
+            }
+            set {
+                this["YamaRecoListTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double YamaRecoListLeft {
+            get {
+                return ((double)(this["YamaRecoListLeft"]));
+            }
+            set {
+                this["YamaRecoListLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double YamaRecoListWidth {
+            get {
+                return ((double)(this["YamaRecoListWidth"]));
+            }
+            set {
+                this["YamaRecoListWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double YamaRecoListHeight {
+            get {
+                return ((double)(this["YamaRecoListHeight"]));
+            }
+            set {
+                this["YamaRecoListHeight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DiffTool {
+            get {
+                return ((string)(this["DiffTool"]));
+            }
+            set {
+                this["DiffTool"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double BinViewTop {
+            get {
+                return ((double)(this["BinViewTop"]));
+            }
+            set {
+                this["BinViewTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double BinViewLeft {
+            get {
+                return ((double)(this["BinViewLeft"]));
+            }
+            set {
+                this["BinViewLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double BinViewWidth {
+            get {
+                return ((double)(this["BinViewWidth"]));
+            }
+            set {
+                this["BinViewWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double BinViewHeight {
+            get {
+                return ((double)(this["BinViewHeight"]));
+            }
+            set {
+                this["BinViewHeight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double BinViewFontSize {
+            get {
+                return ((double)(this["BinViewFontSize"]));
+            }
+            set {
+                this["BinViewFontSize"] = value;
+            }
+        }
     }
 }
