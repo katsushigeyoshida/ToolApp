@@ -11,15 +11,15 @@
         <ComboBox Name="cbFileSelect" Margin="80,5,80,0" VerticalAlignment="Top" MouseDoubleClick="cbFileSelect_MouseDoubleClick" SelectionChanged="cbFileSelect_SelectionChanged"
                   ToolTip="ダブルクリックするとファイル選択ダイヤログが開く"/>
         <Button x:Name="btLoad" Content="再表示" Width="50" Margin="0,5,10,0" IsDefault="True" VerticalAlignment="Top" HorizontalAlignment="Right" Click="btLoad_Click" />
-        <TextBlock Text="開始位置" Margin="5,30,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBlock Text="開始位置" Margin="5,32,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox x:Name="tbStart" Margin="60,30,0,0" Width="50" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                  ToolTip="16進で入力する時は0x123 の用に入力" />
-        <TextBlock Text="行バイト数" Margin="120,30,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBlock Text="行バイト数" Margin="120,32,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox x:Name="tbColCount" Margin="180,30,0,0" Width="50" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                  ToolTip="16進で入力する時は0x123 の用に入力" />
         <TextBlock x:Name="tbFileProp" Text="データサイズ" Margin="250,30,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="cbEndian" Content="リトルエンディアン"  Margin="0,30,100,0" Width="100" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Click="cbEndian_Click" />
-        <ComboBox Name="cbDataType" Text="" Margin="0,30,10,0" Width="70" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="cbDataType_SelectionChanged" />
+        <CheckBox Name="cbEndian" Content="リトルエンディアン"  Margin="0,33,120,0" Width="100" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Click="cbEndian_Click" />
+        <ComboBox Name="cbDataType" Text="" Margin="0,30,10,0" Width="100" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="cbDataType_SelectionChanged" />
         <TextBox x:Name="tbBinView" Margin="10,60,10,30" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
         <TextBlock Text="文字サイズ" Margin="5,0,0,5" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
         <ComboBox x:Name="cbFontSize" Margin="65,0,0,5" Width="50" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" SelectionChanged="cbFontSize_SelectionChanged" />

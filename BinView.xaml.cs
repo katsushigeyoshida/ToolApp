@@ -20,13 +20,13 @@ namespace ToolApp
         private string mFileListName = "BinFieList.csv";        //  ファイル名リスト保存ファイ露命
         private byte[] mBinData;                                //  読込データ
         private string[] mDataType = {                          //  データの種別
-            "byte", "ascii", "int8", "int16", "int32", "int64", "float", "double", "日時", "時間", "時間2", "度1", "度2", "度3" };
+            "byte", "ascii", "int8", "int16", "int32", "int64", "float", "double", "日時", "時間", "時間2", "度1", "度2", "度3", "Epson57", "Epson53" };
         private int[] mDataStep = {                             //  データサイズ
-             1,      1,       1,      2,       4,       8,       4,       8,        4,      4,      4,       4,     4,     4    };
+             1,      1,       1,      2,       4,       8,       4,       8,        4,      4,      4,       4,     4,     4,     0,       0,    };
         private string[] mDataForm = {                          //  表示フォーマット
-            "X2",   "X1",    "D3",   "D5",    "D10",   "D20",   "D19",   "F6",     "F6",   "F6",   "F6",    "F6",  "F6",  "F6" };
+            "X2",   "X1",    "D3",   "D5",    "D10",   "D20",   "D19",   "F6",     "F6",   "F6",   "F6",    "F6",  "F6",  "F6",   "",      "" };
         private int[] mCharCount = {                            //  表示文字数
-             2,      1,       3,      5,       10,      20,      14,      22,       19,     12,     9,      22,    22,    12 };
+             2,      1,       3,      5,       10,      20,      14,      22,       19,     12,     9,      22,    22,    12,     0,        0 };
         private List<double> mFontSizes = new List<double>() {
                  8, 9, 10, 11, 11.5, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
             };
@@ -242,6 +242,11 @@ namespace ToolApp
         /// <param name="e"></param>
         private void cbDataType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
+            if (mDataType[cbDataType.SelectedIndex] == "Epson57")
+                tbStart.Text = "21";
+            if (mDataType[cbDataType.SelectedIndex] == "Epson53")
+                tbStart.Text = "4";
+
             tbBinView.Text = dumpData(mBinData);
         }
 
@@ -293,6 +298,15 @@ namespace ToolApp
 
             int start = ylib.intParse(tbStart.Text.ToString());         //  開始位置(byte)
             int typeSize = mDataStep[cbDataType.SelectedIndex];         //  単位データサイズ
+
+            if (mDataType[cbDataType.SelectedIndex] == "Epson57")
+                return dumpEpson(data, 57, new byte[] {0x00,0x71}, start);
+            if (mDataType[cbDataType.SelectedIndex] == "Epson53")
+                return dumpEpson(data, 53, new byte[] { 0x00, 0x10 }, start);
+
+            tbStart.IsEnabled = true;
+            tbColCount.IsEnabled = true;
+
             int rowSize = ylib.intParse(tbColCount.Text.ToString());    //  １行のバイト数
             int charCount = mCharCount[cbDataType.SelectedIndex];
             string colForm = $"X{charCount}";                           //  列タイトルのフォーマット
@@ -335,6 +349,109 @@ namespace ToolApp
             }
             return buf.ToString();
         }
+
+        /// <summary>
+        /// Epson GPS Watch Workout Binary 解析用
+        /// SFシリーズ
+        /// EPSON57 length 57 delmit 00 71  offset 21
+        /// EPSON53 length 53 delmit 00 10  offset 4
+        /// </summary>
+        /// <param name="data">バイナリデータ</param>
+        /// <param name="lineLength">GPS/Graphデータサイズ</param>
+        /// <param name="delmit">区切りコード(2byte)</param>
+        /// <param name="offset">表示オフセット</param>
+        /// <returns>文字列変換データ</returns>
+        private string dumpEpson(byte[] data, int lineLength, byte[] delmit, int offset)
+        {
+            tbStart.IsEnabled = true;
+            tbColCount.IsEnabled = false;
+
+            StringBuilder dumpdata = new StringBuilder();
+            string date = $"start {data[0x48]}/{data[0x49]}/{data[0x4a]} {data[0x4b]}:{data[0x4c]}:{data[0x4d]}";
+            dumpdata.Append(date);
+            date = $"\nend   {data[0x4e]}/{data[0x4f]}/{data[0x50]} {data[0x51]}:{data[0x52]}:{data[0x53]}";
+            dumpdata.Append(date);
+            int preAddr = 0;
+            //  LapData
+            int lapCount = data[0x6c];
+            int address = 0x80;
+            string buf = $"\n[LapData] count {lapCount}";
+            buf += "\nAddres";
+            for (int j = 0; j < 128; j++)
+                buf += " " + j.ToString("X2");
+            for (int i = 0; i < lapCount; i++) {
+                buf += "\n" + address.ToString("X6");
+                for (int j = 0; j < 128; j++) {
+                    buf += " " + data[address + j].ToString("X2");
+                }
+                buf += " " + dispLapData(data, address);
+                address += 128;
+            }
+            dumpdata.Append(buf);
+            // GpsData?
+            buf = "\n[GpsData/GraphData]";
+            buf += "\n    Address";
+            for (int j = 0; j < lineLength; j++)
+                buf += " " + j.ToString("X2");
+            dumpdata.Append(buf);
+            preAddr = address;
+            int count = 0;
+            buf = "";
+            while (address < data.Length - lineLength && count < 10000) {
+                if (data[address + offset] == delmit[0] && data[address + offset  + 1] == delmit[1]) {
+                    if (buf != "")
+                        dumpdata.Append($"\n**** {preAddr.ToString("X6")}{buf}");
+                    buf = $"\n{count.ToString("D4")} {address.ToString("X6")}";
+                    for (int j = 0; j < lineLength; j++) {
+                        buf += " " + data[address++].ToString("X2");
+                    }
+                    count++;
+                    dumpdata.Append(buf);
+                    //buf = dispGpaData(data, address - lineLength);
+                    preAddr = address;
+                    buf = "";
+                } else {
+                    buf += " " + data[address++].ToString("X2");
+                    //address++;
+                    //buf += "*";
+                }
+            }
+
+            return dumpdata.ToString();
+        }
+
+        private string dispLapData(byte[] data, int pos)
+        {
+            string buf = "  ";
+            buf += $"No {BitConverter.ToInt16(data, pos)} ";
+            buf += $"Kind {BitConverter.ToInt16(data, pos + 0x02)} ";
+            buf += $"TimeCentisecond {data[pos + 0x0B].ToString("D2")} ";
+            buf += $"SplitDistance {BitConverter.ToInt16(data, pos + 0x0C).ToString("D5")} ";
+            buf += $"Distance {BitConverter.ToInt16(data, pos + 0x10).ToString("D5")} ";
+            buf += $"Steps {BitConverter.ToInt16(data, pos + 0x14).ToString("D4")} ";
+            buf += $"Calorie {BitConverter.ToInt16(data, pos + 0x18).ToString("D3")} ";
+            buf += $"AescentAltitude {BitConverter.ToInt16(data, pos + 0x1A).ToString("D3")} ";
+            buf += $"DescentAltitude {BitConverter.ToInt16(data, pos + 0x1C).ToString("D3")} ";
+            buf += $"SpeedAve {BitConverter.ToInt16(data, pos + 0x1E).ToString("D5")} ";
+            buf += $"PitchAve {BitConverter.ToInt16(data, pos + 0x2A).ToString("D3")} ";
+            buf += $"StrideAve {BitConverter.ToInt16(data, pos + 0x2E).ToString("D5")} ";
+
+            return buf;
+        }
+
+        private string dispGpaData(byte[] data, int pos)
+        {
+            pos += 2;
+            string buf = " ";
+            buf += $" Latitude {data[pos + 6].ToString("X2")} {data[pos + 7].ToString("X2")} {data[pos + 8].ToString("X2")} {data[pos + 9].ToString("X2")} {data[pos + 10].ToString("X2")} {data[pos + 11].ToString("X2")} ";
+            buf += $" Longitude {data[pos + 13].ToString("X2")} {data[pos + 14].ToString("X2")} {data[pos + 15].ToString("X2")} {data[pos + 16].ToString("X2")} {data[pos + 17].ToString("X2")} {data[pos + 18].ToString("X2")} ";
+            buf += $" Time {data[pos + 22].ToString("X2")} {data[pos + 23].ToString("X2")} {data[pos + 24].ToString("X2")} ";
+            buf += $" Altitude {data[pos + 30].ToString("X2")} {data[pos + 31].ToString("X2")} {data[pos + 32].ToString("X2")} ";
+
+
+            return buf;
+        }
+
 
         /// <summary>
         /// 指定位置のデータを文字列に変換
