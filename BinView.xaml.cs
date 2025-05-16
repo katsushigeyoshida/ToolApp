@@ -365,6 +365,7 @@ namespace ToolApp
         {
             tbStart.IsEnabled = true;
             tbColCount.IsEnabled = false;
+            bool endian = cbEndian.IsChecked == true;                   //  リトルエンディアン
 
             StringBuilder dumpdata = new StringBuilder();
             string date = $"start {data[0x48]}/{data[0x49]}/{data[0x4a]} {data[0x4b]}:{data[0x4c]}:{data[0x4d]}";
@@ -407,7 +408,8 @@ namespace ToolApp
                     }
                     count++;
                     dumpdata.Append(buf);
-                    //buf = dispGpaData(data, address - lineLength);
+                    buf = dispGpaData(data, address - lineLength, endian);
+                    dumpdata.Append(buf);
                     preAddr = address;
                     buf = "";
                 } else {
@@ -439,17 +441,35 @@ namespace ToolApp
             return buf;
         }
 
-        private string dispGpaData(byte[] data, int pos)
+        private string dispGpaData(byte[] data, int pos, bool littleEndien = true)
         {
-            pos += 2;
+            //pos += 2;
             string buf = " ";
-            buf += $" Latitude {data[pos + 6].ToString("X2")} {data[pos + 7].ToString("X2")} {data[pos + 8].ToString("X2")} {data[pos + 9].ToString("X2")} {data[pos + 10].ToString("X2")} {data[pos + 11].ToString("X2")} ";
-            buf += $" Longitude {data[pos + 13].ToString("X2")} {data[pos + 14].ToString("X2")} {data[pos + 15].ToString("X2")} {data[pos + 16].ToString("X2")} {data[pos + 17].ToString("X2")} {data[pos + 18].ToString("X2")} ";
-            buf += $" Time {data[pos + 22].ToString("X2")} {data[pos + 23].ToString("X2")} {data[pos + 24].ToString("X2")} ";
-            buf += $" Altitude {data[pos + 30].ToString("X2")} {data[pos + 31].ToString("X2")} {data[pos + 32].ToString("X2")} ";
+            //buf += $" Time {BitConverter.ToInt16(data,pos + 0x0b).ToString("D4")} ";
+            buf += $" Time {toInt(data, 2, pos + 0x0b, littleEndien).ToString("D4")} ";
+            buf += $" Latitude {toInt(data, 5, pos + 0x12, littleEndien).ToString("D4")}  ";
+            buf += $" Longitude {toInt(data, 5, pos + 0x17, littleEndien).ToString("D4")}  ";
+            //buf += $" Latitude {data[pos + 6].ToString("X2")} {data[pos + 7].ToString("X2")} {data[pos + 8].ToString("X2")} {data[pos + 9].ToString("X2")} {data[pos + 10].ToString("X2")} {data[pos + 11].ToString("X2")} ";
+            //buf += $" Longitude {data[pos + 13].ToString("X2")} {data[pos + 14].ToString("X2")} {data[pos + 15].ToString("X2")} {data[pos + 16].ToString("X2")} {data[pos + 17].ToString("X2")} {data[pos + 18].ToString("X2")} ";
+            //buf += $" Altitude {data[pos + 30].ToString("X2")} {data[pos + 31].ToString("X2")} {data[pos + 32].ToString("X2")} ";
 
 
             return buf;
+        }
+
+        private long toInt(byte[] data, int size, int pos = 0, bool littleEndien = true)
+        {
+            byte[] ret = new byte[size];
+            Array.Copy(data, pos, ret, 0, size);
+            if (!littleEndien)
+                Array.Reverse(ret);
+
+            long n = 0;
+            for (int i = size - 1; 0 <= i; i--) {
+                n *= 0x100;
+                n += data[pos + i];
+            }
+            return n;
         }
 
 
