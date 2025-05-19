@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfLib;
@@ -20,19 +21,24 @@ namespace ToolApp
         private string mFileListName = "BinFieList.csv";        //  ファイル名リスト保存ファイ露命
         private byte[] mBinData;                                //  読込データ
         private string[] mDataType = {                          //  データの種別
-            "byte", "ascii", "int8", "int16", "int32", "int64", "float", "double", "日時", "時間", "時間2", "度1", "度2", "度3", "Epson57", "Epson53" };
-        private int[] mDataStep = {                             //  データサイズ
-             1,      1,       1,      2,       4,       8,       4,       8,        4,      4,      4,       4,     4,     4,     0,       0,    };
-        private string[] mDataForm = {                          //  表示フォーマット
-            "X2",   "X1",    "D3",   "D5",    "D10",   "D20",   "D19",   "F6",     "F6",   "F6",   "F6",    "F6",  "F6",  "F6",   "",      "" };
-        private int[] mCharCount = {                            //  表示文字数
-             2,      1,       3,      5,       10,      20,      14,      22,       19,     12,     9,      22,    22,    12,     0,        0 };
+            "byte", "ascii", "int8", "int16", "int32", "int64", "float", "double", "カスタム", "日時", "時間", "時間2", "度1", "度2", "度3", "Epson57", "Epson53" };
+        private int[] mDataTypeSizes = {                        //  データサイズ
+             1,      1,       1,      2,       4,       8,       4,       8,        4,         4,      4,      4,       4,     4,     4,     0,       0,    };
+        private string[] mDataForms = {                         //  表示フォーマット
+            "X2",   "X1",    "D3",   "D5",    "D10",   "D20",   "D19",   "F6",     "D",         "F6",   "F6",   "F6",    "F6",  "F6",  "F6",   "",      "" };
+        private int[] mDataDispSizes = {                        //  表示文字数
+             2,      1,       3,      5,       10,      20,      14,      22,      4,            19,     12,     9,      22,    22,    12,     0,        0 };
         private List<double> mFontSizes = new List<double>() {
                  8, 9, 10, 11, 11.5, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
             };
+        private int mDataTypeSize = 0;
+        private int mDataDispSize = 0;
+        private string mDataForm = "";
+
         public InputBox mMemoDlg = null;                        //  メモダイヤログ
 
         private YLib ylib = new YLib();
+        private YCalc ycalc = new YCalc();
 
         /// <summary>
         /// バイナリビューワ コンストラクタ
@@ -51,6 +57,8 @@ namespace ToolApp
             cbDataType.SelectedIndex = 0;
             cbFontSize.ItemsSource = mFontSizes;
             cbFontSize.SelectedIndex = mFontSizes.FindIndex(p => p == tbBinView.FontSize);
+            tbDataTypeSize.IsEnabled = false;
+            tbDataTypeSize.Text = 3.ToString();
 
             //  ファイルリスト読込
             loadFileList(mFileListName);
@@ -116,38 +124,6 @@ namespace ToolApp
         }
 
         /// <summary>
-        /// ファイルリストを読み込む
-        /// </summary>
-        /// <param name="path">ファイルパス</param>
-        private void loadFileList(string path)
-        {
-            if (File.Exists(path)) {
-                List<string> fileList = ylib.loadListData(mFileListName);
-                if (0 < fileList.Count) {
-                    cbFileSelect.Items.Clear();
-                    foreach (string file in fileList)
-                        if (File.Exists(file) && !cbFileSelect.Items.Contains(file))
-                            cbFileSelect.Items.Add(file);
-                }
-            }
-        }
-
-        /// <summary>
-        /// ファイルリストを保存する
-        /// </summary>
-        /// <param name="path">ファイル名</param>
-        private void saveFileList(string path)
-        {
-            if (cbFileSelect.Items.Count > 0) {
-                //  ファイルリスト保存
-                List<string> fileList = new List<string>();
-                for (int i = 0; i < cbFileSelect.Items.Count; i++)
-                    fileList.Add(cbFileSelect.Items[i].ToString());
-                ylib.saveListData(path, fileList);
-            }
-        }
-
-        /// <summary>
         /// [終了]ボタン
         /// </summary>
         /// <param name="sender"></param>
@@ -173,12 +149,13 @@ namespace ToolApp
         }
 
         /// <summary>
-        /// データの再表示
+        /// [再表示]データの再表示
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void btLoad_Click(object sender, RoutedEventArgs e)
         {
+            setDataTypePara(cbDataType.SelectedIndex, false);
             tbBinView.Text = dumpData(mBinData);
         }
 
@@ -214,6 +191,32 @@ namespace ToolApp
         }
 
         /// <summary>
+        /// 検索ワードコンテキストメニュー
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void tbSearchMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)e.Source;
+            if (menuItem.Name.CompareTo("tbDec2ByteMenu") == 0) {
+                //  Dec →Byte列変換
+                tbSeachText.Text = dec2Byte(tbSeachText.Text, cbEndian.IsChecked == true);
+            } else if (menuItem.Name.CompareTo("tbByte2DecMenu") == 0) {
+                //  byte列 → Dec
+                tbSeachText.Text = byte2Dec(tbSeachText.Text, cbEndian.IsChecked == true);
+            } else if (menuItem.Name.CompareTo("tbReverseByteMenu") == 0) {
+                //  Byte反転
+                tbSeachText.Text = reverseByte(tbSeachText.Text);
+            } else if (menuItem.Name.CompareTo("tbDeg2dmsMenu") == 0) {
+                //  度ddd.ddd→ddd mm ss(bin)
+                tbSeachText.Text = deg2dms(tbSeachText.Text);
+            } else if (menuItem.Name.CompareTo("tbDeg2dmssMenu") == 0) {
+                //  度ddd.ddd→ddd mm ssss
+                tbSeachText.Text = deg2dmss(tbSeachText.Text);
+            }
+        }
+
+        /// <summary>
         /// データファイル切替
         /// </summary>
         /// <param name="sender"></param>
@@ -224,11 +227,13 @@ namespace ToolApp
             if (index < 0) return;
             string path = cbFileSelect.Items[index].ToString();
             if (0 < index) {
+                //  選択したファイルをリストの上位にして再選択
                 if (cbFileSelect.Items.Contains(path))
                     cbFileSelect.Items.Remove(path);
                 cbFileSelect.Items.Insert(0, path);
                 cbFileSelect.SelectedIndex = 0;
             } else {
+                //  選択したファイル(リストの最上位)をロード
                 if (mMemoDlg != null)
                     mMemoDlg.Close();
                 loadData(path);
@@ -242,11 +247,7 @@ namespace ToolApp
         /// <param name="e"></param>
         private void cbDataType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (mDataType[cbDataType.SelectedIndex] == "Epson57")
-                tbStart.Text = "21";
-            if (mDataType[cbDataType.SelectedIndex] == "Epson53")
-                tbStart.Text = "4";
-
+            setDataTypePara(cbDataType.SelectedIndex);
             tbBinView.Text = dumpData(mBinData);
         }
 
@@ -272,19 +273,62 @@ namespace ToolApp
         }
 
         /// <summary>
-        /// バイナリデータの読込
+        /// データタイプごとにパラメータの設定
         /// </summary>
-        /// <param name="path"></param>
-        private void loadData(string path)
+        /// <param name="typeindex"></param>
+        private void setDataTypePara(int typeindex, bool first = true)
         {
-            if (0 < path.Length && File.Exists(path)) {
-                mBinData = ylib.loadBinData(path);
-                if (mBinData != null) {
-                    tbFileProp.Text = "size = " + mBinData.Length.ToString();
-                    tbBinView.Text = dumpData(mBinData);
-                } else {
-                    tbBinView.Text = "";
+            mDataTypeSize = mDataTypeSizes[typeindex];          //  単位データサイズ
+            mDataDispSize = mDataDispSizes[typeindex];          //  表示桁数
+            mDataForm = mDataForms[typeindex];                  //  表示フォーマット
+
+            tbDataTypeSize.IsEnabled = false;                   //  カスタムのデータサイズ
+            if (mDataType[typeindex] == "カスタム") {
+                tbDataTypeSize.IsEnabled = true;
+                mDataTypeSize = ylib.intParse(tbDataTypeSize.Text);
+                if (8 < mDataTypeSize) {
+                    tbDataTypeSize.Text = "8";
+                    mDataTypeSize = 7;
                 }
+                mDataDispSize = mDataTypeSize < 5 ? mDataTypeSize * 2 + 2 :
+                    mDataTypeSize < 8 ? mDataTypeSize * 2 + 3 : mDataTypeSize * 2 + 4;
+                mDataForm = $"D{mDataDispSize}";
+            } else if (first && mDataType[typeindex] == "Epson57") {
+                tbColCount.Text = "57";
+                tbStart.Text = "21";
+            } else if (first && mDataType[typeindex] == "Epson53") {
+                tbColCount.Text = "53";
+                tbStart.Text = "21";
+            }
+        }
+
+        /// <summary>
+        /// バイナリデータの表示
+        /// EPSON57 length 57 delmitter 00 71  offset 21
+        /// EPSON53 length 53 delmitter 00 10  offset 21
+        /// </summary>
+        /// <param name="data">バイナリデータ</param>
+        private string dumpData(byte[] data)
+        {
+            if (data == null || data.Length == 0) return "";
+
+            int start = (int)ycalc.expression(tbStart.Text.ToString());         //  開始位置(byte)
+            int lineLength = (int)ycalc.expression(tbColCount.Text.ToString()); //  １行のバイト数
+            bool endian = cbEndian.IsChecked == true;                   //  リトルエンディアン
+            int typeSize = mDataTypeSize;                               //  単位データサイズ
+
+            if (mDataType[cbDataType.SelectedIndex] == "Epson57") {
+                tbStart.IsEnabled = true;
+                tbColCount.IsEnabled = false;
+                return dumpEpson(data, 57, new byte[] { 0x00, 0x71 }, start, endian);
+            } else if (mDataType[cbDataType.SelectedIndex] == "Epson53") {
+                tbStart.IsEnabled = true;
+                tbColCount.IsEnabled = false;
+                return dumpEpson(data, 53, new byte[] { 0x00, 0x10 }, start, endian);
+            } else {
+                tbStart.IsEnabled = true;
+                tbColCount.IsEnabled = true;
+                return dumpData(data, typeSize, start, lineLength, mDataDispSize, endian);
             }
         }
 
@@ -292,31 +336,21 @@ namespace ToolApp
         /// バイナリデータの表示
         /// </summary>
         /// <param name="data">バイナリデータ</param>
-        private string dumpData(byte[] data)
+        /// <param name="typeSize">単位データのサイズ</param>
+        /// <param name="start">表示開始位置</param>
+        /// <param name="lineLength">1行の表示バイト数</param>
+        /// <param name="charCount">単位データの表示桁数</param>
+        /// <param name="endian">エンディアン(true=little)</param>
+        /// <returns>費用字文字列</returns>
+        private string dumpData(byte[] data, int typeSize, int start, int lineLength, int charCount, bool endian)
         {
-            if (data == null || data.Length == 0) return "";
-
-            int start = ylib.intParse(tbStart.Text.ToString());         //  開始位置(byte)
-            int typeSize = mDataStep[cbDataType.SelectedIndex];         //  単位データサイズ
-
-            if (mDataType[cbDataType.SelectedIndex] == "Epson57")
-                return dumpEpson(data, 57, new byte[] {0x00,0x71}, start);
-            if (mDataType[cbDataType.SelectedIndex] == "Epson53")
-                return dumpEpson(data, 53, new byte[] { 0x00, 0x10 }, start);
-
-            tbStart.IsEnabled = true;
-            tbColCount.IsEnabled = true;
-
-            int rowSize = ylib.intParse(tbColCount.Text.ToString());    //  １行のバイト数
-            int charCount = mCharCount[cbDataType.SelectedIndex];
             string colForm = $"X{charCount}";                           //  列タイトルのフォーマット
             string sep = new string('-', charCount);                    //  セパレータ
-            bool endian = cbEndian.IsChecked == true;                   //  リトルエンディアン
 
             StringBuilder buf = new StringBuilder();
             //  桁数タイトル
             buf.Append(new string(' ', 7));
-            for (int i = 0; i < rowSize; i += typeSize) {
+            for (int i = 0; i < lineLength; i += typeSize) {
                 if (i % 8 == 0)
                     buf.Append(" ");
                 if (1 < charCount)
@@ -326,7 +360,7 @@ namespace ToolApp
             }
             //  セパレータ
             buf.Append("\n" + new string(' ', 7));
-            for (int i = 0; i < rowSize; i += typeSize) {
+            for (int i = 0; i < lineLength; i += typeSize) {
                 if (i % 8 == 0)
                     buf.Append(" ");
                 if (1 < charCount)
@@ -335,9 +369,9 @@ namespace ToolApp
                     buf.Append($"{sep}");
             }
             //  データ
-            for (int row = start; row < data.Length; row += rowSize) {
+            for (int row = start; row < data.Length; row += lineLength) {
                 buf.Append($"\n{row:X6}:");
-                for (int i = row; i < row + rowSize && i <= data.Length - typeSize; i += typeSize) {
+                for (int i = row; i < row + lineLength && i <= data.Length - typeSize; i += typeSize) {
                     if ((i - row) % 8 == 0)
                         buf.Append(" ");
                     string strdata = convByteStr(data, i, typeSize, endian);
@@ -353,20 +387,14 @@ namespace ToolApp
         /// <summary>
         /// Epson GPS Watch Workout Binary 解析用
         /// SFシリーズ
-        /// EPSON57 length 57 delmit 00 71  offset 21
-        /// EPSON53 length 53 delmit 00 10  offset 4
         /// </summary>
         /// <param name="data">バイナリデータ</param>
         /// <param name="lineLength">GPS/Graphデータサイズ</param>
-        /// <param name="delmit">区切りコード(2byte)</param>
+        /// <param name="delmitter">区切りコード(2byte)</param>
         /// <param name="offset">表示オフセット</param>
         /// <returns>文字列変換データ</returns>
-        private string dumpEpson(byte[] data, int lineLength, byte[] delmit, int offset)
+        private string dumpEpson(byte[] data, int lineLength, byte[] delmitter, int offset, bool endian)
         {
-            tbStart.IsEnabled = true;
-            tbColCount.IsEnabled = false;
-            bool endian = cbEndian.IsChecked == true;                   //  リトルエンディアン
-
             StringBuilder dumpdata = new StringBuilder();
             string date = $"start {data[0x48]}/{data[0x49]}/{data[0x4a]} {data[0x4b]}:{data[0x4c]}:{data[0x4d]}";
             dumpdata.Append(date);
@@ -377,9 +405,12 @@ namespace ToolApp
             int lapCount = data[0x6c];
             int address = 0x80;
             string buf = $"\n[LapData] count {lapCount}";
+            //  LapData Address + title
             buf += "\nAddres";
             for (int j = 0; j < 128; j++)
                 buf += " " + j.ToString("X2");
+            buf += dispLapDataTitle();
+            //  LapData
             for (int i = 0; i < lapCount; i++) {
                 buf += "\n" + address.ToString("X6");
                 for (int j = 0; j < 128; j++) {
@@ -399,7 +430,7 @@ namespace ToolApp
             int count = 0;
             buf = "";
             while (address < data.Length - lineLength && count < 10000) {
-                if (data[address + offset] == delmit[0] && data[address + offset  + 1] == delmit[1]) {
+                if (data[address + offset] == delmitter[0] && data[address + offset  + 1] == delmitter[1]) {
                     if (buf != "")
                         dumpdata.Append($"\n**** {preAddr.ToString("X6")}{buf}");
                     buf = $"\n{count.ToString("D4")} {address.ToString("X6")}";
@@ -418,35 +449,77 @@ namespace ToolApp
                     //buf += "*";
                 }
             }
+            if (buf != "")
+                dumpdata.Append($"\n**** {preAddr.ToString("X6")}{buf}");
 
             return dumpdata.ToString();
         }
 
-        private string dispLapData(byte[] data, int pos)
+        /// <summary>
+        /// [LapData]タイトル
+        /// </summary>
+        /// <returns></returns>
+        private string dispLapDataTitle()
         {
             string buf = "  ";
-            buf += $"No {BitConverter.ToInt16(data, pos)} ";
-            buf += $"Kind {BitConverter.ToInt16(data, pos + 0x02)} ";
-            buf += $"TimeCentisecond {data[pos + 0x0B].ToString("D2")} ";
-            buf += $"SplitDistance {BitConverter.ToInt16(data, pos + 0x0C).ToString("D5")} ";
-            buf += $"Distance {BitConverter.ToInt16(data, pos + 0x10).ToString("D5")} ";
-            buf += $"Steps {BitConverter.ToInt16(data, pos + 0x14).ToString("D4")} ";
-            buf += $"Calorie {BitConverter.ToInt16(data, pos + 0x18).ToString("D3")} ";
-            buf += $"AescentAltitude {BitConverter.ToInt16(data, pos + 0x1A).ToString("D3")} ";
-            buf += $"DescentAltitude {BitConverter.ToInt16(data, pos + 0x1C).ToString("D3")} ";
-            buf += $"SpeedAve {BitConverter.ToInt16(data, pos + 0x1E).ToString("D5")} ";
-            buf += $"PitchAve {BitConverter.ToInt16(data, pos + 0x2A).ToString("D3")} ";
-            buf += $"StrideAve {BitConverter.ToInt16(data, pos + 0x2E).ToString("D5")} ";
+            buf += "No Kind SplitTime Time TimeCentisecond SplitDistance Distance ";
+            buf += "Steps Calorie AescentAltitude DescentAltitude SpeedAve PaceAve ";
+            buf += "PitchAve StrideAve EndPoint";
 
             return buf;
         }
 
+        /// <summary>
+        /// [LapData]表示
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        private string dispLapData(byte[] data, int pos)
+        {
+            string buf = "  ";
+            buf += $"{BitConverter.ToInt16(data, pos)} ";               //  No 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x02)}    ";     //  Kind 
+            int splitime = data[pos + 0x04] * 60;
+                splitime = (splitime + data[pos + 0x05]) * 60;
+                splitime = (splitime + data[pos + 0x06]) * 100;
+                splitime = splitime + data[pos + 0x07];
+            buf += $"{splitime.ToString("D6")}    ";                    //  LapSplitTime 
+            int time = data[pos + 0x08] * 60;
+                time = (time + data[pos + 0x09]) * 60;
+                time = time + data[pos + 0x0A];
+            buf += $"{time.ToString("D4")} ";                           //  LapTime 
+            buf += $"{data[pos + 0x0B].ToString("D2")}              ";  //  TimeCentisecond 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x0C).ToString("D5")}         ";     //  SplitDistance 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x10).ToString("D5")}    ";  //  Distance 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x14).ToString("D4")}  ";    //  Steps 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x18).ToString("D3")}     "; //  Calorie 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x1A).ToString("D3")}             "; //  AescentAltitude 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x1C).ToString("D3")}             "; //  DescentAltitude
+            buf += $"{BitConverter.ToInt16(data, pos + 0x1E).ToString("D5")}    ";  //  SpeedAve
+            int pace = data[pos + 0x22] * 60;
+                pace = pace + data[pos + 0x23];
+            buf += $"{pace.ToString("D4")}    ";                                    //  PaceAve 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x2A).ToString("D3")}      "; //  PitchAve 
+            buf += $"{BitConverter.ToInt16(data, pos + 0x2E).ToString("D5")}    ";  //  StrideAve 
+
+            return buf;
+        }
+
+        /// <summary>
+        /// [GraphData/GpsData]表示
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="pos"></param>
+        /// <param name="littleEndien"></param>
+        /// <returns></returns>
         private string dispGpaData(byte[] data, int pos, bool littleEndien = true)
         {
             //pos += 2;
             string buf = " ";
             //buf += $" Time {BitConverter.ToInt16(data,pos + 0x0b).ToString("D4")} ";
-            buf += $" Time {toInt(data, 2, pos + 0x0b, littleEndien).ToString("D4")} ";
+            buf += $" Slope {((sbyte)data[pos + 0x03]).ToString("D")} ";
+            buf += $" No/Time {toInt(data, 2, pos + 0x0b, littleEndien).ToString("D4")} ";
             buf += $" Latitude {toInt(data, 5, pos + 0x12, littleEndien).ToString("D4")}  ";
             buf += $" Longitude {toInt(data, 5, pos + 0x17, littleEndien).ToString("D4")}  ";
             //buf += $" Latitude {data[pos + 6].ToString("X2")} {data[pos + 7].ToString("X2")} {data[pos + 8].ToString("X2")} {data[pos + 9].ToString("X2")} {data[pos + 10].ToString("X2")} {data[pos + 11].ToString("X2")} ";
@@ -456,22 +529,6 @@ namespace ToolApp
 
             return buf;
         }
-
-        private long toInt(byte[] data, int size, int pos = 0, bool littleEndien = true)
-        {
-            byte[] ret = new byte[size];
-            Array.Copy(data, pos, ret, 0, size);
-            if (!littleEndien)
-                Array.Reverse(ret);
-
-            long n = 0;
-            for (int i = size - 1; 0 <= i; i--) {
-                n *= 0x100;
-                n += data[pos + i];
-            }
-            return n;
-        }
-
 
         /// <summary>
         /// 指定位置のデータを文字列に変換
@@ -484,10 +541,10 @@ namespace ToolApp
         /// <returns>変換文字列</returns>
         private string convByteStr(byte[] data, int pos, int size, bool littleEndien = true)
         {
+            string form = mDataForm;
+            int charCount = mDataDispSize;
             string buf = "";
             byte[] byteData = convByte(data, pos, size, littleEndien);
-            string form = mDataForm[cbDataType.SelectedIndex];
-            int charCount = mCharCount[cbDataType.SelectedIndex];
             switch (mDataType[cbDataType.SelectedIndex]) {
                 case "byte": buf = byteData[0].ToString(form); break;
                 case "ascii":
@@ -503,6 +560,9 @@ namespace ToolApp
                     break;
                 case "double":
                     buf = BitConverter.ToDouble(byteData, 0).ToString().PadLeft(charCount);
+                    break;
+                case "カスタム":
+                    buf = toInt(byteData, size).ToString(form);
                     break;
                 case "日時":
                     var baseDate = new DateTime(1989, 12, 31, 0, 0, 0);
@@ -528,6 +588,130 @@ namespace ToolApp
                     break;
             }
             return buf;
+        }
+
+        /// <summary>
+        /// 10進数文字列をbyte配列文字列に変換
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="littleEndian"></param>
+        /// <returns></returns>
+        private string dec2Byte(string str, bool littleEndian = true)
+        {
+            long val = ylib.longParse(str);
+            byte[] bytes = BitConverter.GetBytes(val);
+            int n = 0;
+            for (n = bytes.Length - 1; 0 < n; n--)
+                if (bytes[n] != 0) break;
+            string buf = "";
+            if (littleEndian) {
+                for (int i = 0; i <= n && i < bytes.Length; i++)
+                    buf += bytes[i].ToString("X2") + " ";
+            } else {
+                for (int i = n; 0 <= i; i--)
+                    buf += bytes[i].ToString("X2") + " ";
+            }
+            return 0 < buf.Length ? buf.Remove(buf.Length - 1) : "";
+        }
+
+        /// <summary>
+        /// byte配列を10進文字列に変換
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="endian"></param>
+        /// <returns></returns>
+        private string byte2Dec(string str, bool endian = true)
+        {
+            string[] datas = str.Split(' ');
+            long ret = 0;
+            if (endian) {
+                for (int i = datas.Length - 1; 0 <= i; i--) {
+                    if (0 < datas[i].Length)
+                        ret = ret * 256 + ylib.longHexParse(datas[i]);
+                }
+            } else {
+                for (int i = 0; i < datas.Length; i++) {
+                    if (0 < datas[i].Length)
+                        ret = ret * 256 + ylib.longHexParse(datas[i]);
+                }
+            }
+            return ret.ToString();
+        }
+
+        /// <summary>
+        /// byte配列の文字列を逆順にする
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        private string reverseByte(string str)
+        {
+            string[] strings = str.Split(' ');
+            Array.Reverse(strings);
+            string buf = "";
+            for (int i = 0; i < strings.Length; i++)
+                if (strings[i] != " ") buf += strings[i] + " ";
+            return 0 < buf.Length ? buf.Remove(buf.Length - 1) : "";
+        }
+
+        /// <summary>
+        /// 度ddd.ddd→ddd mm ss (byte列)
+        /// 48.921206 → 30 37 10 22 10
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private string deg2dms(string data)
+        {
+            double deg = ylib.doubleParse(data);
+            int d = (int)Math.Floor(deg);
+            int m = (int)Math.Floor((deg - d) * 60);
+            int s = (int)Math.Floor((deg - d - m / 60.0) * 3600);
+            return $"{d.ToString("X2")} {m.ToString("X2")} {s.ToString("X2")}";
+        }
+
+
+        private string deg2dmss(string data)
+        {
+            double deg = ylib.doubleParse(data);
+            int d = (int)Math.Floor(deg);
+            int m = (int)Math.Floor((deg - d) * 60);
+            int s = (int)Math.Floor((deg - d - m / 60.0) * 3600);
+            int ss = (int)Math.Floor((deg - d - m / 60.0 - s / 3600.0) * 3600 * 100);
+            return $"{d.ToString("X2")} {m.ToString("X2")} {s.ToString("X2")} {ss.ToString("X2")}";
+        }
+
+
+        /// <summary>
+        /// 指定サイズのバイトデータを数値に変換
+        /// </summary>
+        /// <param name="data">バイトデータ</param>
+        /// <param name="size">データサイズ</param>
+        /// <param name="pos">データの位置</param>
+        /// <param name="littleEndien">エンディアン</param>
+        /// <returns>数値</returns>
+        private ulong toInt(byte[] data, int size, int pos, bool littleEndien = true)
+        {
+            byte[] ret = new byte[size];
+            Array.Copy(data, pos, ret, 0, size);
+            //  ビックエンディアンの時は逆順にする
+            if (!littleEndien)
+                Array.Reverse(ret);
+            return toInt(ret, size);
+        }
+
+        /// <summary>
+        /// 指定サイズのバイトデータを数値に変換
+        /// </summary>
+        /// <param name="data">バイトデータ</param>
+        /// <param name="size"><データサイズ/param>
+        /// <returns>数値</returns>
+        private ulong toInt(byte[] data, int size)
+        {
+            ulong n = 0;
+            for (int i = size - 1; 0 <= i; i--) {
+                n *= 0x100;
+                n += data[i];
+            }
+            return n;
         }
 
         /// <summary>
@@ -683,6 +867,7 @@ namespace ToolApp
             mMemoDlg.mFontFamily = "MS Gothic";
             mMemoDlg.mFilePath = path;
             mMemoDlg.mMultiLine = true;
+            mMemoDlg.mTextRapping = false;
             mMemoDlg.Title = $"めも [{Path.GetFileName(path)}]";
             mMemoDlg.mCalcMenu = true;
             mMemoDlg.mHexCalcMenu = true;
@@ -740,6 +925,55 @@ namespace ToolApp
             buf += "\nサイズ　 : " + fileInfo.Length.ToString("N");
             buf += "\n";
             return buf;
+        }
+
+        /// <summary>
+        /// バイナリデータの読込
+        /// </summary>
+        /// <param name="path"></param>
+        private void loadData(string path)
+        {
+            if (0 < path.Length && File.Exists(path)) {
+                mBinData = ylib.loadBinData(path);
+                if (mBinData != null) {
+                    tbFileProp.Text = "size = " + mBinData.Length.ToString();
+                    tbBinView.Text = dumpData(mBinData);
+                } else {
+                    tbBinView.Text = "";
+                }
+            }
+        }
+
+        /// <summary>
+        /// ファイルリストを読み込む
+        /// </summary>
+        /// <param name="path">ファイルパス</param>
+        private void loadFileList(string path)
+        {
+            if (File.Exists(path)) {
+                List<string> fileList = ylib.loadListData(mFileListName);
+                if (0 < fileList.Count) {
+                    cbFileSelect.Items.Clear();
+                    foreach (string file in fileList)
+                        if (File.Exists(file) && !cbFileSelect.Items.Contains(file))
+                            cbFileSelect.Items.Add(file);
+                }
+            }
+        }
+
+        /// <summary>
+        /// ファイルリストを保存する
+        /// </summary>
+        /// <param name="path">ファイル名</param>
+        private void saveFileList(string path)
+        {
+            if (cbFileSelect.Items.Count > 0) {
+                //  ファイルリスト保存
+                List<string> fileList = new List<string>();
+                for (int i = 0; i < cbFileSelect.Items.Count; i++)
+                    fileList.Add(cbFileSelect.Items[i].ToString());
+                ylib.saveListData(path, fileList);
+            }
         }
     }
 }
