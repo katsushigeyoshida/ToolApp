@@ -5,26 +5,40 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToolApp"
         mc:Ignorable="d"
-        Title="BinView" Height="450" Width="700" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="BinView" Height="450" Width="650" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
         <TextBlock Text="ファイルパス" Margin="5,5,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <ComboBox Name="cbFileSelect" Margin="80,5,80,0" VerticalAlignment="Top" MouseDoubleClick="cbFileSelect_MouseDoubleClick" SelectionChanged="cbFileSelect_SelectionChanged"
                   ToolTip="ダブルクリックするとファイル選択ダイヤログが開く"/>
         <Button x:Name="btLoad" Content="再表示" Width="50" Margin="0,5,10,0" IsDefault="True" VerticalAlignment="Top" HorizontalAlignment="Right" Click="btLoad_Click" />
-        <TextBlock Text="開始位置" Margin="5,32,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <TextBox x:Name="tbStart" Margin="60,30,0,0" Width="50" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+        <TextBlock Text="開始" Margin="5,35,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox x:Name="tbStart" Margin="35,33,0,0" Width="60" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+                 ToolTip="開始位置 16進で入力する時は0x123のように入力、計算式も使用可能" />
+        <TextBlock Text="終了" Margin="5,58,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox x:Name="tbEnd" Margin="35,55,0,0" Width="60" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+                 ToolTip="終了位置 16進で入力する時は0x123のように入力、計算式も使用可能" />
+        <TextBlock Text="改行コード" Margin="100,58,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox x:Name="tbCR" Margin="155,55,0,0" Width="150" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
+                 ToolTip="0x30 0x10 | 0x30 0x20 など改行コードを入力、複数入力の時は | で区切る 16進で入力する時は0x123のように入力、計算式も使用可能" />
+        <TextBlock Text="行バイト数" Margin="100,35,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox x:Name="tbColCount" Margin="155,33,0,0" Width="60" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
                  ToolTip="16進で入力する時は0x123のように入力、計算式も使用可能" />
-        <TextBlock Text="行バイト数" Margin="120,32,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <TextBox x:Name="tbColCount" Margin="180,30,0,0" Width="50" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left"
-                 ToolTip="16進で入力する時は0x123のように入力、計算式も使用可能" />
-        <CheckBox Name="cbEndian" Content="LittleEndian"  Margin="240,33,0,0" Height="20" VerticalAlignment="Top" Click="cbEndian_Click" HorizontalAlignment="Left" Width="100" />
-        <TextBlock Text="データ構造" Margin="0,33,290,0" VerticalAlignment="Top" HorizontalAlignment="Right" />
-        <ComboBox Name="cbDataStruct" Text="" Margin="0,30,200,0" Width="80" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="cbDataType_SelectionChanged" />
-        <TextBlock Text="データ型" Margin="0,33,150,0" VerticalAlignment="Top" HorizontalAlignment="Right" />
-        <ComboBox Name="cbDataType" Text="" Margin="0,30,60,0" Width="80" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="cbDataType_SelectionChanged" />
-        <TextBox x:Name="tbDataTypeSize" Text="サイズ" Width="40" Margin="0,33,10,0" VerticalAlignment="Top" HorizontalAlignment="Right"
-                 ToolTip="カスタムを選択したときのデータのバイト数を指定"/>
-        <TextBox x:Name="tbBinView" Margin="10,60,10,30" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
+        <CheckBox Name="cbEndian" Content="LittleEndian"  Margin="220,35,0,0" Height="20" VerticalAlignment="Top" Click="cbEndian_Click" HorizontalAlignment="Left" Width="100" />
+        <TextBlock Text="データ構造" Margin="0,60,200,0" VerticalAlignment="Top" HorizontalAlignment="Right" />
+        <ComboBox Name="cbDataStruct" Text="" Margin="0,58,110,0" Width="80" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="cbDataType_SelectionChanged" />
+        <TextBlock Text="データ型" Margin="0,35,200,0" VerticalAlignment="Top" HorizontalAlignment="Right" />
+        <ComboBox Name="cbDataType" Text="" Margin="0,33,110,0" Width="80" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="cbDataType_SelectionChanged" />
+        <ComboBox x:Name="cbCustomData" Text="カスタムデータ" Width="90" Margin="0,33,10,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right"
+                 ToolTip="カスタムを選択したときのデータを指定" MouseDoubleClick="cbCustomData_MouseDoubleClick" SelectionChanged="cbCustomData_SelectionChanged">
+            <ComboBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="追加" Name="cbCustomDataAddMenu" Click="cbCustomDataMenu_Click" />
+                    <MenuItem Header="編集" Name="cbCustomDataEditMenu" Click="cbCustomDataMenu_Click" />
+                    <MenuItem Header="削除" Name="cbCustomDataRemoveMenu" Click="cbCustomDataMenu_Click" />
+                </ContextMenu>
+            </ComboBox.ContextMenu>
+        </ComboBox>
+        <TextBox x:Name="tbBinView" Margin="10,80,10,30" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
         <TextBlock Text="文字サイズ" Margin="5,0,0,5" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
         <ComboBox x:Name="cbFontSize" Margin="65,0,0,5" Width="50" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" SelectionChanged="cbFontSize_SelectionChanged" />
         <TextBlock Text="検索" Margin="130,0,0,5" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
@@ -45,7 +59,9 @@
         <Button x:Name="btTopSearch" Content="先頭" Margin="300,0,0,5" Width="30" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="btTopSearch_Click" />
         <Button x:Name="btNextSearch" Content="次" Margin="340,0,0,5" Width="30" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="btNextSearch_Click" />
         <TextBlock x:Name="tbSearchPos" Text="位置" Margin="380,0,0,5" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-        <TextBlock x:Name="tbFileProp" Text="データサイズ" Margin="0,0,120,5" HorizontalAlignment="Right" Width="54" Height="20" VerticalAlignment="Bottom" />
+        <TextBlock x:Name="tbFileProp" Text="データサイズ" Margin="0,0,130,5" HorizontalAlignment="Right" Width="80" Height="20" VerticalAlignment="Bottom" />
+        <Button x:Name="btStatistic" Content="統計" Margin="0,0,90,5" Width="30" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btStatistic_Click"
+                ToolTip="コードの出現頻度を求める" />
         <Button x:Name="btMemo" Content="メモ" Margin="0,0,50,5" Width="30" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btMemo_Click"
                 ToolTip="メモ用のダイヤログを表示、ダイヤログの中では計算式や10進16進変換などが使用できる"/>
         <Button x:Name="btClose" Content="終了" Margin="0,0,10,5" Width="30" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btClose_Click" />

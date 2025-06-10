@@ -358,5 +358,53 @@ namespace ToolApp.Properties {
                 this["BinViewFontSize"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double StatisticTop {
+            get {
+                return ((double)(this["StatisticTop"]));
+            }
+            set {
+                this["StatisticTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double StatisticLeft {
+            get {
+                return ((double)(this["StatisticLeft"]));
+            }
+            set {
+                this["StatisticLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double StatisticWidth {
+            get {
+                return ((double)(this["StatisticWidth"]));
+            }
+            set {
+                this["StatisticWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double StatisticHeight {
+            get {
+                return ((double)(this["StatisticHeight"]));
+            }
+            set {
+                this["StatisticHeight"] = value;
+            }
+        }
     }
 }

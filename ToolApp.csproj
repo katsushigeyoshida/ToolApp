@@ -75,6 +75,9 @@
     <Compile Include="ScreenCapture.xaml.cs">
       <DependentUpon>ScreenCapture.xaml</DependentUpon>
     </Compile>
+    <Compile Include="StatisticDlg.xaml.cs">
+      <DependentUpon>StatisticDlg.xaml</DependentUpon>
+    </Compile>
     <Compile Include="YamaRecoList\GuideRouteData.cs" />
     <Compile Include="YamaRecoList\YamaListData.cs" />
     <Compile Include="YamaRecoList\YamaRecoData.cs" />
@@ -122,6 +125,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ScreenCapture.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="StatisticDlg.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
