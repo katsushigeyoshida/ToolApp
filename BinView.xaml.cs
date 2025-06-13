@@ -112,7 +112,7 @@ namespace ToolApp
         };
         private string mFileListName = "BinFieList.csv";        //  ファイル名リスト保存ファイ露命
         private byte[] mBinData;                                //  読込データ
-        private string[] mDataStruct = {
+        private string[] mDataStruct = {                        //  構造化処理名
             "なし", "EpsonSf", "EpsonJ" };
         private List<double> mFontSizes = new List<double>() {
                  8, 9, 10, 11, 11.5, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
@@ -259,6 +259,8 @@ namespace ToolApp
                 //  選択したファイル(リストの最上位)をロード
                 if (mMemoDlg != null)
                     mMemoDlg.Close();
+                tbStart.Text = "0";
+                tbEnd.Text = "";
                 loadData(path);
             }
         }
@@ -503,7 +505,6 @@ namespace ToolApp
             }
             if (first && mDataStruct[structIndex] == "EpsonSf") {
                 tbColCount.Text = "57";
-                //tbStart.Text = "21";
             } else if (first && mDataStruct[structIndex] == "EpsonJ") {
                 //tbColCount.Text = "53";
                 //tbStart.Text = "21";
@@ -832,7 +833,6 @@ namespace ToolApp
                 mLong += BitConverter.ToInt16(data, pos + 0x04);
                 mAlti += BitConverter.ToInt16(data, pos + 0x06);
                 if (data[pos + 0x20] == 0x50) graphOffset = 0x20;   //  GraphData
-                
             } else
                 return buf;
             buf += $" Latitude  {format((double)mLati / (double)0x400000, "F6", 10)}";
@@ -842,11 +842,11 @@ namespace ToolApp
             if (0 < graphOffset) {
                 pos += graphOffset;
                 buf += $" [01]Slope {format((sbyte)data[pos + 0x01], "D", 2)} ";
-                buf += $" [04]Speed {format(ylib.toUInt(data, 4, pos + 0x04, littleEndien) / 64, "D", 4)} ";
-                buf += $" [11]Stride {format(ylib.toUInt(data, 1, pos + 0x11, littleEndien) / 64, "D", 4)} ";
-                buf += $" [12]Pitch {format(ylib.toUInt(data, 2, pos + 0x12, littleEndien) / 64, "D", 4)} ";
+                buf += $" [04]Speed ? {format(ylib.toUInt(data, 4, pos + 0x04, littleEndien) / 64, "D", 4)} ";
                 buf += $" [08]Distance {format(ylib.toUInt(data, 4, pos + 0x08, littleEndien) / 64, "D", 6)} ";
-                buf += $" [09]No/Time? {format(ylib.toUInt(data, 2, pos + 0x09, littleEndien), "D", 4)} ";
+                //buf += $" [09]No/Time? {format(ylib.toUInt(data, 2, pos + 0x09, littleEndien), "D", 4)} ";
+                buf += $" [11]Stride ? {format(ylib.toUInt(data, 1, pos + 0x11, littleEndien) / 64, "D", 4)} ";
+                buf += $" [12]Pitch ? {format(ylib.toUInt(data, 2, pos + 0x12, littleEndien) / 64, "D", 4)} ";
                 buf += $" [1A]Status? {format(ylib.toUInt(data, 1, pos + 0x1a, littleEndien), "D", 4)} ";
             }
             return buf;

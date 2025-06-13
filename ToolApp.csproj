@@ -63,6 +63,7 @@
     <Compile Include="DiffFolder.xaml.cs">
       <DependentUpon>DiffFolder.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EpsonReader.cs" />
     <Compile Include="FitConverter.xaml.cs">
       <DependentUpon>FitConverter.xaml</DependentUpon>
     </Compile>

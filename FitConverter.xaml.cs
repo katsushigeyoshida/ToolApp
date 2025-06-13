@@ -12,8 +12,12 @@ namespace ToolApp
     /// </summary>
     public partial class FitConverter : Window
     {
-        private string mFitFilePath = "";
+        private string mGpsFilePath = "";
         private FitReader mFitReader;
+        private EpsonReader mEpsonReader;
+        private List<GpsData> mGpsDataList;
+        private GpsInfoData mGpsInfoData;
+
         private List<string> mFileList = new List<string>();
         private string mFileListName = "FitFieList.csv";
         private YLib ylib = new YLib();
@@ -33,6 +37,20 @@ namespace ToolApp
             }
         }
 
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (cbFitPath.Items.Count > 0) {
+                List<string> list = new List<string>();
+                foreach (string file in cbFitPath.Items)
+                    list.Add(file);
+                ylib.saveListData(mFileListName, list);
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+        }
+
         /// <summary>
         /// Fitファイルパスの選択
         /// </summary>
@@ -40,8 +58,8 @@ namespace ToolApp
         /// <param name="e"></param>
         private void cbFitPath_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            string folder = 0 < mFitFilePath.Length ? Path.GetDirectoryName(mFitFilePath) : ".";
-            string path = ylib.fileSelect(folder, "fit");
+            string folder = 0 < mGpsFilePath.Length ? Path.GetDirectoryName(mGpsFilePath) : ".";
+            string path = ylib.fileSelect(folder, "fit,bin");
             if (0 < path.Length) {
                 if (cbFitPath.Items.Contains(path))
                     cbFitPath.Items.Remove(path);
@@ -70,14 +88,26 @@ namespace ToolApp
             }
         }
 
+        /// <summary>
+        /// GPSデータファイルの読込
+        /// </summary>
+        /// <param name="path"></param>
         private void loadFile(string path)
         {
             if (mFileList.Contains(path)) 
                 mFileList.Remove(path);
             if (File.Exists(path)) {
-                mFitFilePath = path;
-                mFileList.Insert(0, mFitFilePath);
-                getFit(mFitFilePath);
+                mGpsFilePath = path;
+                mFileList.Insert(0, mGpsFilePath);
+                string ext = Path.GetExtension(path).ToLower();
+                if (ext == ".fit")
+                    getFit(mGpsFilePath);
+                else if (ext == ".bin")
+                    getEpson(mGpsFilePath);
+                else
+                    return;
+                tbGpsInfo.Text = gpsInfoData(mGpsInfoData);
+                tbGpsData.Text = getGpsData(mGpsDataList);
             }
         }
 
@@ -90,9 +120,9 @@ namespace ToolApp
         private void btGpxSave_Click(object sender, RoutedEventArgs e)
         {
             if (mFileList.Count > 0) {
-                string path = Path.GetDirectoryName(mFitFilePath);
-                path += "\\GPS_" + mFitReader.mGpsInfoData.mFirstTime.ToString("yyyyMMddHHmmss") + ".gpx";
-                convGpx(mFitReader, path);
+                string path = Path.GetDirectoryName(mGpsFilePath);
+                path += "\\GPS_" + mGpsInfoData.mFirstTime.ToString("yyyyMMddHHmmss") + ".gpx";
+                convGpx(mGpsDataList, path);
                 MessageBox.Show("GPX変換終了\n" + path);
             }
         }
@@ -105,9 +135,9 @@ namespace ToolApp
         private void btCsvSave_Click(object sender, RoutedEventArgs e)
         {
             if (mFileList.Count > 0) {
-                string path = Path.GetDirectoryName(mFitFilePath);
-                path += "\\GPS_" + mFitReader.mGpsInfoData.mFirstTime.ToString("yyyyMMddHHmmss") + ".csv";
-                convCsv(mFitReader, path);
+                string path = Path.GetDirectoryName(mGpsFilePath);
+                path += "\\GPS_" + mGpsInfoData.mFirstTime.ToString("yyyyMMddHHmmss") + ".csv";
+                convCsv(mGpsDataList, path);
                 MessageBox.Show("CSV変換終了\n" + path);
             }
         }
@@ -119,36 +149,33 @@ namespace ToolApp
         /// <param name="e"></param>
         private void btOK_Click(object sender, RoutedEventArgs e)
         {
-            if (mFileList.Count > 0) {
-                ylib.saveListData(mFileListName, mFileList);
-            }
             Close();
         }
 
         /// <summary>
         /// FitのGPSデータをGPXファイルに変換
         /// </summary>
-        /// <param name="fitReader">FitReader</param>
+        /// <param name="gpsListdata">FitReader</param>
         /// <param name="gpxPath">GPXファイルパス</param>
         /// <returns>可否</returns>
-        private bool convGpx(FitReader fitReader, string gpxPath)
+        private bool convGpx(List<GpsData> gpsListdata, string gpxPath)
         {
-            GpxWriter gpxWriter = new GpxWriter(fitReader.mListGpsData, gpxPath);
+            GpxWriter gpxWriter = new GpxWriter(gpsListdata, gpxPath);
             return gpxWriter.writeDataAll();
         }
 
         /// <summary>
         /// FitのGPSデータをCSVファイルに変換
         /// </summary>
-        /// <param name="fitReader">FitReader</param>
+        /// <param name="gpsListdata">FitReader</param>
         /// <param name="csvPath">CSVファイルパス</param>
         /// <returns>可否</returns>
-        private bool convCsv(FitReader fitReader, string csvPath)
+        private bool convCsv(List<GpsData> gpsListdata, string csvPath)
         {
             List<string> buf = new List<string>();
             buf.Add("DateTime,Latitude,Longitude,Elevator");
-            for (int i = 0; i < fitReader.mListGpsData.Count; i++)
-                buf.Add(fitReader.mListGpsData[i].toCsvString());
+            for (int i = 0; i < gpsListdata.Count; i++)
+                buf.Add(gpsListdata[i].toCsvString());
             ylib.saveListData(csvPath, buf);
             return true;
         }
@@ -167,25 +194,41 @@ namespace ToolApp
             if (count == 0)
                 return false;
             mFitReader.dataChk();    //  エラーデータチェック
-
-            tbGpsInfo.Text = gpsInfoData(mFitReader);
-            tbGpsData.Text = getGpsData(mFitReader);
+            mGpsDataList = mFitReader.mListGpsData;
+            mGpsInfoData = mFitReader.mGpsInfoData;
 
             return true;
         }
 
         /// <summary>
-        /// FitのGPS情報を文字列に変換
+        /// EpsonWatch SFシリーズのGPSデータの読込
+        /// </summary>
+        /// <param name="path">ファイル名</param>
+        /// <returns></returns>
+        private bool getEpson(string path)
+        {
+            tbGpsInfo.Text = "";
+            tbGpsData.Text = "";
+            mEpsonReader = new EpsonReader(path);
+
+            mGpsDataList = mEpsonReader.mListGpsData;
+            mGpsInfoData = mEpsonReader.mGpsInfoData;
+
+            return true;
+        }
+
+        /// <summary>
+        /// GPS情報を文字列に変換
         /// </summary>
         /// <param name="fitReader">FitReader</param>
         /// <returns>文字列</returns>
-        private string gpsInfoData(FitReader fitReader)
+        private string gpsInfoData(GpsInfoData gpsInfoData)
         {
-            double distance = fitReader.mGpsInfoData.mDistance;
-            double minElevation = fitReader.mGpsInfoData.mMinElevator;
-            double maxElevation = fitReader.mGpsInfoData.mMaxElevator;
-            DateTime firstTime = fitReader.mGpsInfoData.mFirstTime;
-            DateTime lastTime = fitReader.mGpsInfoData.mLastTime;
+            double distance = gpsInfoData.mDistance;
+            double minElevation = gpsInfoData.mMinElevator;
+            double maxElevation = gpsInfoData.mMaxElevator;
+            DateTime firstTime = gpsInfoData.mFirstTime;
+            DateTime lastTime = gpsInfoData.mLastTime;
 
             string buffer = "";
             TimeSpan spanTime = lastTime - firstTime;
@@ -194,7 +237,7 @@ namespace ToolApp
                 " 経過: " + ((spanTime.TotalMinutes < 60.0 * 24.0) ? spanTime.ToString(@"hh\:mm\:ss") : spanTime.ToString(@"d\d\a\y\ hh\:mm\:ss"));
             buffer += "\n移動距離: " + distance.ToString("#,##0.## km") +
                 " 速度: " + (distance / spanTime.TotalHours).ToString("##0.# km/s") +
-                " データ数: " + fitReader.mListGpsData.Count;
+                " データ数: " + mGpsDataList.Count;
             buffer += "\n最大標高: " + maxElevation.ToString("#,##0 m") +
                 " 最小標高: " + minElevation.ToString("#,##0 m") +
                 " 標高差: " + (maxElevation - minElevation).ToString("#,##0 m");
@@ -202,15 +245,15 @@ namespace ToolApp
         }
 
         /// <summary>
-        /// FitのGPSデータを文字列に変換
+        /// GPSデータを文字列に変換
         /// </summary>
         /// <param name="fitReader">FitReader</param>
         /// <returns>文字列</returns>
-        private string getGpsData(FitReader fitReader)
+        private string getGpsData(List<GpsData> listGpsData)
         {
             string buffer = "";
-            for (int i = 0; i < fitReader.mListGpsData.Count; i++)
-                buffer += i.ToString("D5") + ": " + fitReader.mListGpsData[i].toString() + "\n";
+            for (int i = 0; i < listGpsData.Count; i++)
+                buffer += i.ToString("D5") + ": " + listGpsData[i].toString() + "\n";
             return buffer;
         }
     }

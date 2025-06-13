@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToolApp"
         mc:Ignorable="d"
-        Title="FitConverter" Height="450" Width="500">
+        Title="FitConverter" Height="450" Width="500" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
-        <Label Content="Fitファイル" HorizontalAlignment="Left" Margin="5,5,0,0" VerticalAlignment="Top" RenderTransformOrigin="-1.618,-2.13"/>
+        <Label Content="GPSファイル" HorizontalAlignment="Left" Margin="5,5,0,0" VerticalAlignment="Top" RenderTransformOrigin="-1.618,-2.13"/>
         <ComboBox Name="cbFitPath" Margin="65,5,70,0" VerticalAlignment="Top" MouseDoubleClick="cbFitPath_MouseDoubleClick" SelectionChanged="cbFitPath_SelectionChanged" />
         <Button x:Name="btFitGet" Content="再読込" Margin="0,5,10,0" Width="40" VerticalAlignment="Top" HorizontalAlignment="Right" Click="btFitGet_Click"/>
         <TextBlock x:Name="tbGpsInfo" Margin="10,35,10,0"  Height="50" TextWrapping="Wrap" VerticalAlignment="Top"/>
