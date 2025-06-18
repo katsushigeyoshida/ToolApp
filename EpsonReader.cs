@@ -13,6 +13,16 @@ namespace ToolApp
         public List<GpsData> mListGpsData;                      //  GPSデータ(時間/座標/標高)[DATATYPE.gpsData]
         public GpsInfoData mGpsInfoData;                        //  gpsデータ情報
 
+        private List<byte[]> mCodeCount = new List<byte[]>() {
+                new byte[] { 0x30, 40 },
+                new byte[] { 0x31, 24 },
+                new byte[] { 0x40,  8 },
+                new byte[] { 0x41, 54 },
+                new byte[] { 0x50, 16 },
+                new byte[] { 0x60,  4 },
+                new byte[] { 0x71,  4 },
+            };
+
         public byte[] mEpsonData;                               //  Epson SFシリーズデータ
         public int mPos = 0;                                    //  読込位置
 
@@ -52,19 +62,40 @@ namespace ToolApp
             if (mListGpsData == null) mListGpsData = new List<GpsData>();
             mLatitude = 0;
             mLongitude = 0;
+            int skipCount = 0;
             while (address < data.Length - 32) {
-                if (data[address] == 0x30 && (data[address + 1] == 0x10 || data[address + 1] == 0x20)) {
+                if (skipCount == 0 && data[address] == 0x30 && (data[address + 1] == 0x10 || data[address + 1] == 0x20)) {
                     GpsData gpsData = getGpsDataAbsolute(data, address);
                     if (gpsData != null)
                         mListGpsData.Add(gpsData);
-                    address += 24;
-                } else if (data[address] == 0x31 && (data[address + 1] == 0x10 || data[address + 1] == 0x20)) {
+                    address += 40;
+                } else if (skipCount == 0 && data[address] == 0x31 && (data[address + 1] == 0x10 || data[address + 1] == 0x20)) {
                     mListGpsData.Add(getGpsDataRelative(data, address));
-                    address += 12;
+                    address += 24;
                 }
+                skipCount = skipChk(data[address], skipCount, mCodeCount);
                 address++;
             }
         }
+
+        /// <summary>
+        /// データ種別コードのデータサイズ
+        /// </summary>
+        /// <param name="code">種別コード</param>
+        /// <param name="skipCount">読飛ばしサイズ</param>
+        /// <param name="codeCount">種別コートリスト</param>
+        /// <returns>読飛ばしサイズ - 1</returns>
+        private int skipChk(byte code, int skipCount, List<byte[]> codeCount)
+        {
+            if (skipCount == 0) {
+                for (int i = 0; i < codeCount.Count; i++) {
+                    if (codeCount[i][0] == code)
+                        return codeCount[i][1] - 1;
+                }
+            }
+            return 0 < skipCount ? skipCount - 1 : 0;
+        }
+
 
         /// <summary>
         /// 日時の初期値の取得

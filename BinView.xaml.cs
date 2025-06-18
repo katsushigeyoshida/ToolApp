@@ -113,7 +113,10 @@ namespace ToolApp
         private string mFileListName = "BinFieList.csv";        //  ファイル名リスト保存ファイ露命
         private byte[] mBinData;                                //  読込データ
         private string[] mDataStruct = {                        //  構造化処理名
-            "なし", "EpsonSf", "EpsonJ" };
+            "なし", 
+            "EpsonSf",
+            //"EpsonJ",
+        };
         private List<double> mFontSizes = new List<double>() {
                  8, 9, 10, 11, 11.5, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
             };
@@ -649,6 +652,15 @@ namespace ToolApp
         /// <returns>文字列変換データ</returns>
         private string dumpEpson(byte[] data, DataType dataType, int startPos, int endPos, int lineLength, bool endian)
         {
+            List<byte[]> codeCount = new List<byte[]>() {
+                new byte[] { 0x30, 40 },
+                new byte[] { 0x31, 24 },
+                new byte[] { 0x40,  8 },
+                new byte[] { 0x41, 54 },
+                new byte[] { 0x50, 16 },
+                new byte[] { 0x60,  4 },
+                new byte[] { 0x71,  4 },
+            };
             List<byte[]> crcode = new List<byte[]> { 
                 new byte[] { 0x30, 0x10},
                 new byte[] { 0x30, 0x20},
@@ -690,37 +702,58 @@ namespace ToolApp
             // 固定長データ GpsData?
             buf = "\n[GpsData/GraphData]";
             buf += "\n " + dispGpsHeader(data, address);
-            buf += "\n    Address";
+            buf += "\n     Address";
             for (int j = 0; j < lineLength; j += dataType.ByteSize)
                 buf += dispForm(j / dataType.ByteSize, dataType, j.ToString(colForm), true);
             dumpdata.Append(buf);
             preAddr = address;
             int count = 0;
+            int skipCount = 0;
             while (address < data.Length && address < endPos) {
                 buf = "";
                 int offset = 0;
                 for (int i = 0; i < lineLength && address + i < data.Length - dataType.ByteSize; i += dataType.ByteSize) {
-                    if (i != 0 && crcheck(data, address + i, crcode)) {
+                    if (i != 0 && skipCount == 0 && crcheck(data, address + i, crcode)) {
                         offset = i;
+                        skipCount = skipChk(data[address + i], skipCount, codeCount);
                         break;
                     }
+                    skipCount = skipChk(data[address + i], skipCount, codeCount);
                     string strdata = convByteStr(data, address, i, dataType, endian);
                     buf += dispForm(i, dataType, strdata);
                 }
                 if (crcheck(data, address, crcode)) {
-                    dumpdata.Append($"\n{count.ToString("D4")} {address.ToString("X6")}{buf}");
+                    dumpdata.Append($"\n{count.ToString("D5")} {address.ToString("X6")}{buf}");
                     buf = dispGpaData(data, address, endian);   //  GpsDataデータの内容
                     dumpdata.Append(buf);
                     count++;
                 } else {
-                    dumpdata.Append($"\n**** {address.ToString("X6")}{buf}");
+                    dumpdata.Append($"\n***** {address.ToString("X6")}{buf}");
                 }
                 address += offset == 0 ? lineLength : offset;
             }
             if (buf != "")
-                dumpdata.Append($"\n**** {preAddr.ToString("X6")}{buf}");
+                dumpdata.Append($"\n***** {preAddr.ToString("X6")}{buf}");
 
             return dumpdata.ToString();
+        }
+
+        /// <summary>
+        /// データ種別コードのデータサイズ
+        /// </summary>
+        /// <param name="code">種別コード</param>
+        /// <param name="skipCount">読飛ばしサイズ</param>
+        /// <param name="codeCount">種別コートリスト</param>
+        /// <returns>読飛ばしサイズ - 1</returns>
+        private int skipChk(byte code, int skipCount, List<byte[]> codeCount)
+        {
+            if (skipCount == 0) {
+                for (int i = 0; i < codeCount.Count; i++) {
+                    if (codeCount[i][0] == code)
+                        return codeCount[i][1] - 1;
+                }
+            }
+            return 0 < skipCount ? skipCount - 1 : 0;
         }
 
         /// <summary>

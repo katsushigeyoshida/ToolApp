@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ToolApp"
         mc:Ignorable="d"
-        Title="FitConverter" Height="450" Width="500" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="GPSデータ読込" Height="450" Width="500" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
         <Label Content="GPSファイル" HorizontalAlignment="Left" Margin="5,5,0,0" VerticalAlignment="Top" RenderTransformOrigin="-1.618,-2.13"/>
         <ComboBox Name="cbFitPath" Margin="65,5,70,0" VerticalAlignment="Top" MouseDoubleClick="cbFitPath_MouseDoubleClick" SelectionChanged="cbFitPath_SelectionChanged" />

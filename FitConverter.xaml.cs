@@ -161,7 +161,7 @@ namespace ToolApp
         private bool convGpx(List<GpsData> gpsListdata, string gpxPath)
         {
             GpxWriter gpxWriter = new GpxWriter(gpsListdata, gpxPath);
-            return gpxWriter.writeDataAll();
+            return gpxWriter.writeDataAll(true);
         }
 
         /// <summary>
