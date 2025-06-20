@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using WpfLib;
@@ -251,10 +252,10 @@ namespace ToolApp
         /// <returns>文字列</returns>
         private string getGpsData(List<GpsData> listGpsData)
         {
-            string buffer = "";
+            StringBuilder buffer = new StringBuilder();
             for (int i = 0; i < listGpsData.Count; i++)
-                buffer += i.ToString("D5") + ": " + listGpsData[i].toString() + "\n";
-            return buffer;
+                buffer.Append(i.ToString("D5") + ": " + listGpsData[i].toString() + "\n");
+            return buffer.ToString();
         }
     }
 }

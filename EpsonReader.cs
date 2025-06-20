@@ -14,8 +14,9 @@ namespace ToolApp
         public GpsInfoData mGpsInfoData;                        //  gpsデータ情報
 
         private List<byte[]> mCodeCount = new List<byte[]>() {
-                new byte[] { 0x30, 40 },
-                new byte[] { 0x31, 24 },
+                new byte[] { 0x20,  8 },    //  StartTime
+                new byte[] { 0x30, 32 },    //  GPSData(Absolute)
+                new byte[] { 0x31, 24 },    //  GPSDATA(Relative)
                 new byte[] { 0x40,  8 },
                 new byte[] { 0x41, 54 },
                 new byte[] { 0x50, 16 },

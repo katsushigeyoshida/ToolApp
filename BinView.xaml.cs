@@ -653,8 +653,9 @@ namespace ToolApp
         private string dumpEpson(byte[] data, DataType dataType, int startPos, int endPos, int lineLength, bool endian)
         {
             List<byte[]> codeCount = new List<byte[]>() {
-                new byte[] { 0x30, 40 },
-                new byte[] { 0x31, 24 },
+                new byte[] { 0x20,  8 },    //  StartTime
+                new byte[] { 0x30, 32 },    //  GPSData(Absolute)
+                new byte[] { 0x31, 24 },    //  GPSDATA(Relative)
                 new byte[] { 0x40,  8 },
                 new byte[] { 0x41, 54 },
                 new byte[] { 0x50, 16 },
